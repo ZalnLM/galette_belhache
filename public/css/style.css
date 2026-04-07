@@ -393,6 +393,17 @@ td {
     gap: 0.5rem;
 }
 
+.ingredient-unit-hint {
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px dashed var(--line);
+    background: var(--panel-soft);
+    color: var(--muted);
+    min-height: 52px;
+}
+
 .stack-md {
     gap: 0.9rem;
 }

@@ -224,14 +224,12 @@ class AdminController
              ORDER BY r.display_order ASC, r.name ASC'
         )->fetchAll();
 
-        $ingredients = $this->db->query('SELECT i.id, i.name, u.symbol AS purchase_unit FROM ingredients i JOIN units u ON u.id = i.purchase_unit_id ORDER BY i.name ASC')->fetchAll();
-        $units = $this->db->query('SELECT * FROM units ORDER BY family ASC, sort_order ASC, name ASC')->fetchAll();
+        $ingredients = $this->db->query('SELECT i.id, i.name, i.purchase_unit_id, u.symbol AS purchase_unit FROM ingredients i JOIN units u ON u.id = i.purchase_unit_id ORDER BY i.name ASC')->fetchAll();
 
         View::render('admin/recipes', [
             'pageTitle' => 'Recettes',
             'recipes' => $recipes,
             'ingredients' => $ingredients,
-            'units' => $units,
         ]);
     }
 
@@ -259,7 +257,7 @@ class AdminController
         );
 
         $recipeId = $this->db->lastInsertId();
-        $this->syncRecipeIngredients($recipeId, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? [], $_POST['ingredient_unit_id'] ?? []);
+        $this->syncRecipeIngredients($recipeId, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? []);
 
         Flash::set('success', 'Recette ajoutee.');
         header('Location: /admin/recipes');
@@ -284,8 +282,7 @@ class AdminController
             [(int)$id]
         )->fetchAll();
 
-        $ingredients = $this->db->query('SELECT i.id, i.name, u.symbol AS purchase_unit FROM ingredients i JOIN units u ON u.id = i.purchase_unit_id ORDER BY i.name ASC')->fetchAll();
-        $units = $this->db->query('SELECT * FROM units ORDER BY family ASC, sort_order ASC, name ASC')->fetchAll();
+        $ingredients = $this->db->query('SELECT i.id, i.name, i.purchase_unit_id, u.symbol AS purchase_unit FROM ingredients i JOIN units u ON u.id = i.purchase_unit_id ORDER BY i.name ASC')->fetchAll();
         $formulaUsageCount = (int)$this->db->query('SELECT COUNT(*) FROM formula_items WHERE recipe_id = ?', [(int)$id])->fetchColumn();
 
         View::render('admin/recipe_edit', [
@@ -293,7 +290,6 @@ class AdminController
             'recipe' => $recipe,
             'recipeIngredients' => $recipeIngredients,
             'ingredients' => $ingredients,
-            'units' => $units,
             'formulaUsageCount' => $formulaUsageCount,
         ]);
     }
@@ -323,7 +319,7 @@ class AdminController
             [$name, $category, $description, $sellingPrice, $displayOrder, $isActive, (int)$id]
         );
 
-        $this->syncRecipeIngredients((int)$id, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? [], $_POST['ingredient_unit_id'] ?? []);
+        $this->syncRecipeIngredients((int)$id, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? []);
 
         Flash::set('success', 'Recette mise a jour.');
         header('Location: /admin/recipes');
@@ -350,15 +346,21 @@ class AdminController
         exit;
     }
 
-    private function syncRecipeIngredients(int $recipeId, array $ingredientIds, array $quantities, array $unitIds): void
+    private function syncRecipeIngredients(int $recipeId, array $ingredientIds, array $quantities): void
     {
         $this->db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [$recipeId]);
 
         foreach ($ingredientIds as $index => $ingredientId) {
             $ingredientId = (int)$ingredientId;
             $quantity = (float)($quantities[$index] ?? 0);
-            $unitId = (int)($unitIds[$index] ?? 0);
-            if ($ingredientId > 0 && $quantity > 0 && $unitId > 0) {
+            if ($ingredientId > 0 && $quantity > 0) {
+                $unitId = (int)$this->db->query(
+                    'SELECT purchase_unit_id FROM ingredients WHERE id = ?',
+                    [$ingredientId]
+                )->fetchColumn();
+                if ($unitId <= 0) {
+                    continue;
+                }
                 $this->db->query(
                     'INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit_id) VALUES (?, ?, ?, ?)',
                     [$recipeId, $ingredientId, $quantity, $unitId]

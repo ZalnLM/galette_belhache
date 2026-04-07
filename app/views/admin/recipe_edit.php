@@ -58,15 +58,8 @@
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <input type="number" name="ingredient_quantity[]" step="0.01" min="0" value="<?= htmlspecialchars((string)$row['quantity'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Quantite">
-                        <select name="ingredient_unit_id[]">
-                            <option value="">Unite</option>
-                            <?php foreach ($units as $unit): ?>
-                                <option value="<?= (int)$unit['id'] ?>" <?= (int)$unit['id'] === (int)$row['unit_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($unit['symbol'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <input type="number" name="ingredient_quantity[]" step="0.01" min="0" value="<?= htmlspecialchars((string)$row['quantity'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Quantite dans l unite de l ingredient">
+                        <div class="ingredient-unit-hint">Unite definie dans la fiche ingredient</div>
                     </div>
                 <?php endforeach; ?>
             </div>
