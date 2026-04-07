@@ -48,3 +48,46 @@
         </table>
     </div>
 </section>
+
+<section class="panel stack-lg">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Creation</p>
+            <h2>Ajouter un compte</h2>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/users" class="grid-form two-cols">
+        <?= Csrf::input() ?>
+        <label>
+            <span>Prenom</span>
+            <input type="text" name="first_name" required>
+        </label>
+        <label>
+            <span>Nom</span>
+            <input type="text" name="last_name" required>
+        </label>
+        <label class="full">
+            <span>Email</span>
+            <input type="email" name="email" required>
+        </label>
+        <label>
+            <span>Mot de passe</span>
+            <input type="password" name="password" required>
+        </label>
+        <label>
+            <span>Role</span>
+            <select name="role">
+                <option value="utilisateur">Utilisateur</option>
+                <option value="admin">Admin</option>
+            </select>
+        </label>
+        <label class="check">
+            <input type="checkbox" name="is_active" checked>
+            <span>Compte actif</span>
+        </label>
+        <div class="full">
+            <button class="btn btn-primary" type="submit">Creer le compte</button>
+        </div>
+    </form>
+</section>

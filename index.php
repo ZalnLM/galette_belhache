@@ -52,6 +52,7 @@ $router->post('demande-devis/{id}/message', [QuoteRequestController::class, 'sto
 
 $router->get('admin', [AdminController::class, 'dashboard']);
 $router->get('admin/users', [AdminController::class, 'users']);
+$router->post('admin/users', [AdminController::class, 'storeUser']);
 $router->post('admin/users/{id}/update', [AdminController::class, 'updateUser']);
 $router->get('admin/ingredients', [AdminController::class, 'ingredients']);
 $router->post('admin/ingredients', [AdminController::class, 'storeIngredient']);

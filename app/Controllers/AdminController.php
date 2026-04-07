@@ -56,6 +56,47 @@ class AdminController
         ]);
     }
 
+    public function storeUser(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $firstName = trim((string)($_POST['first_name'] ?? ''));
+        $lastName = trim((string)($_POST['last_name'] ?? ''));
+        $email = mb_strtolower(trim((string)($_POST['email'] ?? '')));
+        $password = (string)($_POST['password'] ?? '');
+        $role = in_array($_POST['role'] ?? '', ['admin', 'utilisateur'], true) ? $_POST['role'] : 'utilisateur';
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($firstName === '' || $lastName === '' || $email === '' || $password === '') {
+            Flash::set('danger', 'Tous les champs de creation sont obligatoires.');
+            header('Location: /admin/users');
+            exit;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Flash::set('danger', 'Adresse email invalide.');
+            header('Location: /admin/users');
+            exit;
+        }
+
+        $existing = $this->db->query('SELECT id FROM users WHERE email = ? LIMIT 1', [$email])->fetch();
+        if ($existing) {
+            Flash::set('danger', 'Un utilisateur existe deja avec cet email.');
+            header('Location: /admin/users');
+            exit;
+        }
+
+        $this->db->query(
+            'INSERT INTO users (first_name, last_name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+            [$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $role, $isActive]
+        );
+
+        Flash::set('success', 'Compte cree.');
+        header('Location: /admin/users');
+        exit;
+    }
+
     public function updateUser(string $id): void
     {
         Auth::requireAdmin();
