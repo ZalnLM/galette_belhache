@@ -23,8 +23,8 @@
                 <label>
                     <span>Categorie</span>
                     <select name="category">
-                        <option value="sale" <?= $recipe['category'] === 'sale' ? 'selected' : '' ?>>Sale</option>
-                        <option value="sucre" <?= $recipe['category'] === 'sucre' ? 'selected' : '' ?>>Sucre</option>
+                        <option value="sale" <?= $recipe['category'] === 'sale' ? 'selected' : '' ?>>Salé</option>
+                        <option value="sucre" <?= $recipe['category'] === 'sucre' ? 'selected' : '' ?>>Sucré</option>
                     </select>
                 </label>
                 <label>

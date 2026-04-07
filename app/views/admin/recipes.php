@@ -63,8 +63,8 @@
                 <label>
                     <span>Categorie</span>
                     <select name="category">
-                        <option value="sale">Sale</option>
-                        <option value="sucre">Sucre</option>
+                        <option value="sale">Salé</option>
+                        <option value="sucre">Sucré</option>
                     </select>
                 </label>
                 <label>
