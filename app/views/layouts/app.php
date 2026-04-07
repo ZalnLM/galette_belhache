@@ -14,6 +14,7 @@
                 <?php if ($currentUser): ?>
                     <a href="/">Formules</a>
                     <a href="/mes-demandes">Mes demandes</a>
+                    <a href="/security">Securite</a>
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
                         <a href="/admin">Admin</a>
                         <a href="/admin/users">Utilisateurs</a>

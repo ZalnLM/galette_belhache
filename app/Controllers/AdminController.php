@@ -94,7 +94,8 @@ class AdminController
         }
 
         $this->db->query(
-            'INSERT INTO users (first_name, last_name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO users (first_name, last_name, email, password_hash, role, is_active, email_verified_at, two_factor_enabled)
+             VALUES (?, ?, ?, ?, ?, ?, NOW(), 0)',
             [$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $role, $isActive]
         );
 

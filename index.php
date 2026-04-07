@@ -30,10 +30,12 @@ header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ance
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/app/Core/Database.php';
+require_once __DIR__ . '/app/Core/SchemaManager.php';
 require_once __DIR__ . '/app/Core/Flash.php';
 require_once __DIR__ . '/app/Core/Csrf.php';
 require_once __DIR__ . '/app/Core/Auth.php';
 require_once __DIR__ . '/app/Core/LoginThrottle.php';
+require_once __DIR__ . '/app/Core/Totp.php';
 require_once __DIR__ . '/app/Core/View.php';
 require_once __DIR__ . '/app/Core/Router.php';
 require_once __DIR__ . '/app/Controllers/AuthController.php';
@@ -42,16 +44,26 @@ require_once __DIR__ . '/app/Controllers/QuoteRequestController.php';
 require_once __DIR__ . '/app/Controllers/AdminController.php';
 
 Database::getInstance();
+SchemaManager::ensure();
 
 $router = new Router();
 
 $router->get('', [HomeController::class, 'index']);
 $router->get('login', [AuthController::class, 'login']);
 $router->post('login', [AuthController::class, 'storeLogin']);
+$router->get('verify-email', [AuthController::class, 'verifyEmail']);
+$router->get('resend-verification', [AuthController::class, 'resendVerification']);
+$router->post('resend-verification', [AuthController::class, 'storeResendVerification']);
+$router->get('two-factor', [AuthController::class, 'twoFactorChallenge']);
+$router->post('two-factor', [AuthController::class, 'storeTwoFactorChallenge']);
 $router->get('forgot-password', [AuthController::class, 'forgotPassword']);
 $router->post('forgot-password', [AuthController::class, 'storeForgotPassword']);
 $router->get('reset-password', [AuthController::class, 'resetPassword']);
 $router->post('reset-password', [AuthController::class, 'storeResetPassword']);
+$router->get('security', [AuthController::class, 'security']);
+$router->post('security/two-factor/prepare', [AuthController::class, 'prepareTwoFactor']);
+$router->post('security/two-factor/enable', [AuthController::class, 'enableTwoFactor']);
+$router->post('security/two-factor/disable', [AuthController::class, 'disableTwoFactor']);
 $router->get('register', [AuthController::class, 'register']);
 $router->post('register', [AuthController::class, 'storeRegister']);
 $router->post('logout', [AuthController::class, 'logout']);

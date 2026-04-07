@@ -11,6 +11,11 @@ CREATE TABLE users (
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     password_reset_token VARCHAR(100) DEFAULT NULL,
     password_reset_expires_at DATETIME DEFAULT NULL,
+    email_verification_token VARCHAR(100) DEFAULT NULL,
+    email_verification_expires_at DATETIME DEFAULT NULL,
+    email_verified_at DATETIME DEFAULT NULL,
+    two_factor_secret VARCHAR(64) DEFAULT NULL,
+    two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

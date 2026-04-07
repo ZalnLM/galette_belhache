@@ -3,9 +3,12 @@ declare(strict_types=1);
 
 class Auth
 {
+    private const TWO_FACTOR_TTL = 600;
+
     public static function login(array $user): void
     {
         session_regenerate_id(true);
+        unset($_SESSION['pending_2fa']);
         $_SESSION['user'] = [
             'id' => (int)$user['id'],
             'first_name' => (string)$user['first_name'],
@@ -13,6 +16,41 @@ class Auth
             'email' => (string)$user['email'],
             'role' => (string)$user['role'],
         ];
+    }
+
+    public static function beginTwoFactorChallenge(array $user): void
+    {
+        session_regenerate_id(true);
+        unset($_SESSION['user']);
+        $_SESSION['pending_2fa'] = [
+            'user_id' => (int)$user['id'],
+            'created_at' => time(),
+        ];
+    }
+
+    public static function pendingTwoFactorUserId(): ?int
+    {
+        $pending = $_SESSION['pending_2fa'] ?? null;
+        if (!is_array($pending)) {
+            return null;
+        }
+
+        if ((int)($pending['created_at'] ?? 0) < time() - self::TWO_FACTOR_TTL) {
+            unset($_SESSION['pending_2fa']);
+            return null;
+        }
+
+        return (int)($pending['user_id'] ?? 0) ?: null;
+    }
+
+    public static function hasPendingTwoFactor(): bool
+    {
+        return self::pendingTwoFactorUserId() !== null;
+    }
+
+    public static function clearPendingTwoFactor(): void
+    {
+        unset($_SESSION['pending_2fa']);
     }
 
     public static function logout(): void

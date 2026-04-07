@@ -20,6 +20,76 @@ class AuthController
         View::render('auth/login', ['pageTitle' => 'Connexion']);
     }
 
+    public function verifyEmail(): void
+    {
+        $token = trim((string)($_GET['token'] ?? ''));
+        if ($token === '' || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+            Flash::set('danger', 'Le lien de validation est invalide.');
+            header('Location: /login');
+            exit;
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $user = $this->db->query(
+            'SELECT id FROM users
+             WHERE email_verification_token = ?
+               AND email_verification_expires_at IS NOT NULL
+               AND email_verification_expires_at >= NOW()
+             LIMIT 1',
+            [$tokenHash]
+        )->fetch();
+
+        if (!$user) {
+            Flash::set('danger', 'Le lien de validation est invalide ou expire.');
+            header('Location: /resend-verification');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE users
+             SET email_verified_at = NOW(),
+                 email_verification_token = NULL,
+                 email_verification_expires_at = NULL
+             WHERE id = ?',
+            [(int)$user['id']]
+        );
+
+        Flash::set('success', 'Adresse email validee. Tu peux maintenant te connecter.');
+        header('Location: /login');
+        exit;
+    }
+
+    public function resendVerification(): void
+    {
+        if (Auth::check()) {
+            header('Location: /');
+            exit;
+        }
+
+        View::render('auth/resend_verification', ['pageTitle' => 'Renvoyer la validation']);
+    }
+
+    public function storeResendVerification(): void
+    {
+        Csrf::verify();
+        $email = mb_strtolower(trim((string)($_POST['email'] ?? '')));
+
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $user = $this->db->query(
+                'SELECT * FROM users WHERE email = ? AND is_active = 1 LIMIT 1',
+                [$email]
+            )->fetch();
+
+            if ($user && !$this->isEmailVerified($user)) {
+                $this->issueEmailVerification((int)$user['id'], (string)$user['email'], (string)$user['first_name']);
+            }
+        }
+
+        Flash::set('success', 'Si le compte existe et n est pas encore valide, un nouvel email de validation vient d etre envoye.');
+        header('Location: /login');
+        exit;
+    }
+
     public function forgotPassword(): void
     {
         if (Auth::check()) {
@@ -87,7 +157,68 @@ class AuthController
             exit;
         }
 
+        if (!$this->isEmailVerified($user)) {
+            $this->issueEmailVerification((int)$user['id'], (string)$user['email'], (string)$user['first_name']);
+            Flash::set('warning', 'Ton adresse email doit etre validee avant la connexion. Un nouveau lien vient d etre envoye.');
+            header('Location: /resend-verification');
+            exit;
+        }
+
+        if ((int)($user['two_factor_enabled'] ?? 0) === 1 && (string)($user['two_factor_secret'] ?? '') !== '') {
+            Auth::beginTwoFactorChallenge($user);
+            header('Location: /two-factor');
+            exit;
+        }
+
         LoginThrottle::clear($email, $ip);
+        Auth::login($user);
+        header('Location: /');
+        exit;
+    }
+
+    public function twoFactorChallenge(): void
+    {
+        if (Auth::check()) {
+            header('Location: /');
+            exit;
+        }
+
+        if (!Auth::hasPendingTwoFactor()) {
+            Flash::set('warning', 'Commence par te connecter pour utiliser la verification en deux etapes.');
+            header('Location: /login');
+            exit;
+        }
+
+        View::render('auth/two_factor', ['pageTitle' => 'Verification 2FA']);
+    }
+
+    public function storeTwoFactorChallenge(): void
+    {
+        Csrf::verify();
+
+        $pendingUserId = Auth::pendingTwoFactorUserId();
+        if ($pendingUserId === null) {
+            Flash::set('warning', 'La verification 2FA a expire. Reconnecte-toi.');
+            header('Location: /login');
+            exit;
+        }
+
+        $user = $this->db->query('SELECT * FROM users WHERE id = ? LIMIT 1', [$pendingUserId])->fetch();
+        if (!$user || (int)($user['two_factor_enabled'] ?? 0) !== 1) {
+            Auth::clearPendingTwoFactor();
+            Flash::set('danger', 'Configuration 2FA invalide.');
+            header('Location: /login');
+            exit;
+        }
+
+        $code = trim((string)($_POST['code'] ?? ''));
+        if (!Totp::verifyCode((string)$user['two_factor_secret'], $code)) {
+            Flash::set('danger', 'Code de verification invalide.');
+            header('Location: /two-factor');
+            exit;
+        }
+
+        LoginThrottle::clear((string)$user['email'], trim((string)($_SERVER['REMOTE_ADDR'] ?? 'unknown')));
         Auth::login($user);
         header('Location: /');
         exit;
@@ -206,14 +337,126 @@ class AuthController
         }
 
         $this->db->query(
-            'INSERT INTO users (first_name, last_name, email, password_hash, role, is_active) VALUES (?, ?, ?, ?, ?, 1)',
-            [$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), 'utilisateur']
+            'INSERT INTO users (first_name, last_name, email, password_hash, role, is_active, email_verification_token, email_verification_expires_at, email_verified_at, two_factor_enabled)
+             VALUES (?, ?, ?, ?, ?, 1, ?, ?, NULL, 0)',
+            [
+                $firstName,
+                $lastName,
+                $email,
+                password_hash($password, PASSWORD_DEFAULT),
+                'utilisateur',
+                hash('sha256', $verificationToken = bin2hex(random_bytes(32))),
+                (new DateTimeImmutable('+24 hours'))->format('Y-m-d H:i:s'),
+            ]
         );
 
-        $user = $this->db->query('SELECT * FROM users WHERE id = ?', [$this->db->lastInsertId()])->fetch();
-        Auth::login($user);
-        Flash::set('success', 'Compte cree. Bienvenue sur l espace prive.');
-        header('Location: /');
+        $this->sendEmailVerification((string)$email, $firstName, $verificationToken);
+
+        Flash::set('success', 'Compte cree. Verifie maintenant ton adresse email avant de te connecter.');
+        header('Location: /login');
+        exit;
+    }
+
+    public function security(): void
+    {
+        Auth::requireLogin();
+        $user = $this->db->query(
+            'SELECT id, email, two_factor_secret, two_factor_enabled, email_verified_at
+             FROM users WHERE id = ? LIMIT 1',
+            [(int)Auth::user()['id']]
+        )->fetch();
+
+        $pendingSecret = (string)($_SESSION['two_factor_setup_secret'] ?? '');
+        $otpAuthUri = '';
+        if ($pendingSecret !== '') {
+            $otpAuthUri = Totp::otpAuthUri(
+                APP_NAME . ' (' . (string)$user['email'] . ')',
+                $pendingSecret,
+                APP_NAME
+            );
+        }
+
+        View::render('auth/security', [
+            'pageTitle' => 'Securite',
+            'account' => $user,
+            'pendingSecret' => $pendingSecret,
+            'otpAuthUri' => $otpAuthUri,
+        ]);
+    }
+
+    public function prepareTwoFactor(): void
+    {
+        Auth::requireLogin();
+        Csrf::verify();
+
+        $_SESSION['two_factor_setup_secret'] = Totp::generateSecret();
+        Flash::set('success', 'Cle 2FA preparee. Configure-la dans ton application d authentification puis valide avec un code.');
+        header('Location: /security');
+        exit;
+    }
+
+    public function enableTwoFactor(): void
+    {
+        Auth::requireLogin();
+        Csrf::verify();
+
+        $secret = (string)($_SESSION['two_factor_setup_secret'] ?? '');
+        $code = trim((string)($_POST['code'] ?? ''));
+
+        if ($secret === '') {
+            Flash::set('warning', 'Commence par preparer la configuration 2FA.');
+            header('Location: /security');
+            exit;
+        }
+
+        if (!Totp::verifyCode($secret, $code)) {
+            Flash::set('danger', 'Code 2FA invalide. Verifie la configuration de ton application.');
+            header('Location: /security');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1 WHERE id = ?',
+            [$secret, (int)Auth::user()['id']]
+        );
+
+        unset($_SESSION['two_factor_setup_secret']);
+        Flash::set('success', 'La verification en deux etapes est maintenant activee.');
+        header('Location: /security');
+        exit;
+    }
+
+    public function disableTwoFactor(): void
+    {
+        Auth::requireLogin();
+        Csrf::verify();
+
+        $user = $this->db->query(
+            'SELECT two_factor_secret, two_factor_enabled FROM users WHERE id = ? LIMIT 1',
+            [(int)Auth::user()['id']]
+        )->fetch();
+
+        if (!$user || (int)($user['two_factor_enabled'] ?? 0) !== 1) {
+            Flash::set('warning', 'Le 2FA n est pas actif sur ce compte.');
+            header('Location: /security');
+            exit;
+        }
+
+        $code = trim((string)($_POST['code'] ?? ''));
+        if (!Totp::verifyCode((string)$user['two_factor_secret'], $code)) {
+            Flash::set('danger', 'Code 2FA invalide.');
+            header('Location: /security');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0 WHERE id = ?',
+            [(int)Auth::user()['id']]
+        );
+
+        unset($_SESSION['two_factor_setup_secret']);
+        Flash::set('success', 'La verification en deux etapes a ete desactivee.');
+        header('Location: /security');
         exit;
     }
 
@@ -247,14 +490,7 @@ class AuthController
 
     private function sendPasswordResetEmail(string $email, string $firstName, string $token): void
     {
-        $host = (string)($_SERVER['HTTP_HOST'] ?? 'www.dev.galette.belhache.net');
-        $isHttps = (
-            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-            || (($_SERVER['SERVER_PORT'] ?? '') === '443')
-            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
-        );
-        $scheme = $isHttps ? 'https' : 'http';
-        $resetUrl = $scheme . '://' . $host . '/reset-password?token=' . urlencode($token);
+        $resetUrl = APP_BASE_URL . '/reset-password?token=' . urlencode($token);
 
         $subject = APP_NAME . ' - Reinitialisation du mot de passe';
         $message = "Bonjour " . trim($firstName) . ",\n\n"
@@ -274,5 +510,49 @@ class AuthController
         if (!$sent) {
             error_log('Password reset email failed for ' . $email . ' - reset URL: ' . $resetUrl);
         }
+    }
+
+    private function issueEmailVerification(int $userId, string $email, string $firstName): void
+    {
+        $token = bin2hex(random_bytes(32));
+        $this->db->query(
+            'UPDATE users
+             SET email_verification_token = ?, email_verification_expires_at = ?
+             WHERE id = ?',
+            [hash('sha256', $token), (new DateTimeImmutable('+24 hours'))->format('Y-m-d H:i:s'), $userId]
+        );
+
+        $this->sendEmailVerification($email, $firstName, $token);
+    }
+
+    private function sendEmailVerification(string $email, string $firstName, string $token): void
+    {
+        $verificationUrl = APP_BASE_URL . '/verify-email?token=' . urlencode($token);
+        $subject = APP_NAME . ' - Validation de votre adresse email';
+        $message = "Bonjour " . trim($firstName) . ",\n\n"
+            . "Merci pour ton inscription.\n"
+            . "Pour activer ton compte, valide ton adresse email via ce lien :\n"
+            . $verificationUrl . "\n\n"
+            . "Ce lien est valable 24 heures.\n";
+
+        $headers = [
+            'MIME-Version: 1.0',
+            'Content-Type: text/plain; charset=UTF-8',
+            'From: ' . APP_NAME . ' <' . APP_SUPPORT_EMAIL . '>',
+        ];
+
+        $sent = @mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', $message, implode("\r\n", $headers));
+        if (!$sent) {
+            error_log('Verification email failed for ' . $email . ' - verification URL: ' . $verificationUrl);
+        }
+    }
+
+    private function isEmailVerified(array $user): bool
+    {
+        if (!empty($user['email_verified_at'])) {
+            return true;
+        }
+
+        return empty($user['email_verification_token']);
     }
 }

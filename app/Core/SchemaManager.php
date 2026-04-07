@@ -1,0 +1,33 @@
+<?php
+declare(strict_types=1);
+
+class SchemaManager
+{
+    public static function ensure(): void
+    {
+        $db = Database::getInstance();
+        $databaseName = (string)(DB_CONFIG['dbname'] ?? '');
+
+        self::ensureColumn($db, $databaseName, 'users', 'email_verification_token', "ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(100) DEFAULT NULL AFTER password_reset_expires_at");
+        self::ensureColumn($db, $databaseName, 'users', 'email_verification_expires_at', "ALTER TABLE users ADD COLUMN email_verification_expires_at DATETIME DEFAULT NULL AFTER email_verification_token");
+        self::ensureColumn($db, $databaseName, 'users', 'email_verified_at', "ALTER TABLE users ADD COLUMN email_verified_at DATETIME DEFAULT NULL AFTER email_verification_expires_at");
+        self::ensureColumn($db, $databaseName, 'users', 'two_factor_secret', "ALTER TABLE users ADD COLUMN two_factor_secret VARCHAR(64) DEFAULT NULL AFTER email_verified_at");
+        self::ensureColumn($db, $databaseName, 'users', 'two_factor_enabled', "ALTER TABLE users ADD COLUMN two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER two_factor_secret");
+    }
+
+    private static function ensureColumn(Database $db, string $databaseName, string $table, string $column, string $alterSql): void
+    {
+        $exists = (int)$db->query(
+            'SELECT COUNT(*)
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = ?
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?',
+            [$databaseName, $table, $column]
+        )->fetchColumn();
+
+        if ($exists === 0) {
+            $db->query($alterSql);
+        }
+    }
+}

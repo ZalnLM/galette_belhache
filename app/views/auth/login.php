@@ -21,4 +21,7 @@
     <p class="auth-helper">
         <a href="/forgot-password">Mot de passe oublie ?</a>
     </p>
+    <p class="auth-helper">
+        <a href="/resend-verification">Renvoyer l email de validation</a>
+    </p>
 </section>
