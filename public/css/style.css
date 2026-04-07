@@ -256,6 +256,11 @@ textarea {
     color: var(--text);
 }
 
+.btn-danger {
+    background: #f3d8d8;
+    color: var(--danger);
+}
+
 .check {
     display: inline-flex;
     align-items: center;
@@ -393,6 +398,13 @@ td {
     gap: 0.5rem;
 }
 
+.actions-inline {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
 .ingredient-unit-hint {
     display: flex;
     align-items: center;
@@ -402,6 +414,39 @@ td {
     background: var(--panel-soft);
     color: var(--muted);
     min-height: 52px;
+}
+
+.ingredients-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.ingredient-admin-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background: linear-gradient(180deg, #fffdfa 0%, #f8f3eb 100%);
+}
+
+.ingredient-admin-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+}
+
+.ingredient-admin-card__head h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.ingredient-admin-card__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .stack-md {
