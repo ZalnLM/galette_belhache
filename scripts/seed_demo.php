@@ -35,10 +35,6 @@ function ensureIngredient(Database $db, array $data): int
 {
     $existing = $db->query('SELECT id FROM ingredients WHERE name = ? LIMIT 1', [$data['name']])->fetch();
     if ($existing) {
-        $db->query(
-            'UPDATE ingredients SET purchase_quantity = ?, purchase_unit_id = ?, purchase_price = ?, is_active = 1 WHERE id = ?',
-            [$data['purchase_quantity'], $data['purchase_unit_id'], $data['purchase_price'], (int)$existing['id']]
-        );
         return (int)$existing['id'];
     }
 
@@ -53,19 +49,14 @@ function ensureRecipe(Database $db, array $recipe, array $items): int
 {
     $existing = $db->query('SELECT id FROM recipes WHERE name = ? LIMIT 1', [$recipe['name']])->fetch();
     if ($existing) {
-        $recipeId = (int)$existing['id'];
-        $db->query(
-            'UPDATE recipes SET category = ?, description = ?, selling_price = ?, is_active = ?, display_order = ? WHERE id = ?',
-            [$recipe['category'], $recipe['description'], $recipe['selling_price'], $recipe['is_active'], $recipe['display_order'], $recipeId]
-        );
-        $db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [$recipeId]);
-    } else {
-        $db->query(
-            'INSERT INTO recipes (name, category, description, selling_price, is_active, display_order) VALUES (?, ?, ?, ?, ?, ?)',
-            [$recipe['name'], $recipe['category'], $recipe['description'], $recipe['selling_price'], $recipe['is_active'], $recipe['display_order']]
-        );
-        $recipeId = $db->lastInsertId();
+        return (int)$existing['id'];
     }
+
+    $db->query(
+        'INSERT INTO recipes (name, category, description, selling_price, is_active, display_order) VALUES (?, ?, ?, ?, ?, ?)',
+        [$recipe['name'], $recipe['category'], $recipe['description'], $recipe['selling_price'], $recipe['is_active'], $recipe['display_order']]
+    );
+    $recipeId = $db->lastInsertId();
 
     foreach ($items as $item) {
         $db->query(
@@ -81,19 +72,14 @@ function ensureFormula(Database $db, array $formula, array $items): int
 {
     $existing = $db->query('SELECT id FROM formulas WHERE name = ? LIMIT 1', [$formula['name']])->fetch();
     if ($existing) {
-        $formulaId = (int)$existing['id'];
-        $db->query(
-            'UPDATE formulas SET description = ?, price_per_person = ?, minimum_guests = ?, is_price_visible = ?, is_active = ?, display_order = ? WHERE id = ?',
-            [$formula['description'], $formula['price_per_person'], $formula['minimum_guests'], $formula['is_price_visible'], $formula['is_active'], $formula['display_order'], $formulaId]
-        );
-        $db->query('DELETE FROM formula_items WHERE formula_id = ?', [$formulaId]);
-    } else {
-        $db->query(
-            'INSERT INTO formulas (name, description, price_per_person, minimum_guests, is_price_visible, is_active, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [$formula['name'], $formula['description'], $formula['price_per_person'], $formula['minimum_guests'], $formula['is_price_visible'], $formula['is_active'], $formula['display_order']]
-        );
-        $formulaId = $db->lastInsertId();
+        return (int)$existing['id'];
     }
+
+    $db->query(
+        'INSERT INTO formulas (name, description, price_per_person, minimum_guests, is_price_visible, is_active, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [$formula['name'], $formula['description'], $formula['price_per_person'], $formula['minimum_guests'], $formula['is_price_visible'], $formula['is_active'], $formula['display_order']]
+    );
+    $formulaId = $db->lastInsertId();
 
     foreach ($items as $item) {
         $db->query(
