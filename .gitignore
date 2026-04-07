@@ -1,0 +1,6 @@
+/.env
+/storage/
+/uploads/
+/.idea/
+/.vscode/
+*.log

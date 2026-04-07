@@ -1,0 +1,400 @@
+:root {
+    --bg: #f4f1eb;
+    --panel: #fffdf9;
+    --panel-soft: #f8f4ed;
+    --text: #1f1b16;
+    --muted: #6d6257;
+    --line: #d8cec2;
+    --accent: #7a4a2f;
+    --accent-strong: #5b331f;
+    --success: #1d6b45;
+    --danger: #8e2f2f;
+    --warning: #8a6419;
+    --radius: 18px;
+    --shadow: 0 20px 40px rgba(70, 49, 33, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(122, 74, 47, 0.12), transparent 28%),
+        linear-gradient(180deg, #f7f3ec 0%, var(--bg) 100%);
+    color: var(--text);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+input,
+textarea,
+select,
+button {
+    font: inherit;
+}
+
+.site-shell {
+    min-height: 100vh;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(122, 74, 47, 0.12);
+    background: rgba(255, 253, 249, 0.88);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.brand {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.topnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.topnav a {
+    padding: 0.7rem 0.95rem;
+    border-radius: 999px;
+    color: var(--muted);
+}
+
+.topnav a:hover {
+    background: var(--panel-soft);
+    color: var(--text);
+}
+
+.page-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.hero,
+.panel,
+.auth-card,
+.subpanel,
+.stat-card {
+    background: var(--panel);
+    border: 1px solid rgba(122, 74, 47, 0.12);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.hero {
+    padding: 2rem;
+}
+
+.hero-tight {
+    padding: 1.5rem 2rem;
+}
+
+.panel,
+.auth-card,
+.subpanel {
+    padding: 1.5rem;
+}
+
+.auth-card {
+    max-width: 680px;
+    margin: 4rem auto;
+    display: grid;
+    gap: 1.5rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.5rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.cards-grid,
+.stats-grid,
+.details-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+}
+
+.stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.formula-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fffdfa 0%, #f8f3eb 100%);
+}
+
+.formula-card__body {
+    padding: 1.25rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.formula-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.meta-list {
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.meta-list div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.meta-list dt {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.meta-list dd {
+    margin: 0;
+}
+
+.grid-form,
+.ingredient-row,
+.inline-form,
+.actions,
+.stack-md,
+.stack-lg,
+.stack-xl {
+    display: grid;
+    gap: 1rem;
+}
+
+.two-cols {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.grid-form label,
+.stack-md label,
+.stack-lg label {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.full {
+    grid-column: 1 / -1;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.15rem;
+    border-radius: 12px;
+    border: 0;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-strong);
+}
+
+.btn-light {
+    background: var(--panel-soft);
+    color: var(--text);
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.check input {
+    width: auto;
+}
+
+.flash {
+    margin-bottom: 1rem;
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    border: 1px solid transparent;
+}
+
+.flash-success {
+    background: rgba(29, 107, 69, 0.1);
+    border-color: rgba(29, 107, 69, 0.2);
+    color: var(--success);
+}
+
+.flash-danger {
+    background: rgba(142, 47, 47, 0.1);
+    border-color: rgba(142, 47, 47, 0.2);
+    color: var(--danger);
+}
+
+.flash-warning {
+    background: rgba(138, 100, 25, 0.1);
+    border-color: rgba(138, 100, 25, 0.2);
+    color: var(--warning);
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 0.95rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.plain-list {
+    padding-left: 1.2rem;
+    margin: 0;
+}
+
+.message-thread {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.message {
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+}
+
+.message-user {
+    background: #fff;
+}
+
+.message-admin {
+    background: var(--panel-soft);
+}
+
+.message-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.status-badge {
+    align-self: start;
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    background: var(--panel-soft);
+    color: var(--accent-strong);
+    font-weight: 700;
+}
+
+.stat-card {
+    padding: 1.4rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.stat-card span {
+    color: var(--muted);
+}
+
+.stat-card strong {
+    font-size: 2rem;
+}
+
+.ingredient-row {
+    grid-template-columns: minmax(0, 2fr) minmax(110px, 1fr) minmax(110px, 1fr);
+}
+
+.stack-md {
+    gap: 0.9rem;
+}
+
+.stack-lg {
+    gap: 1.25rem;
+}
+
+.stack-xl {
+    gap: 2rem;
+}
+
+@media (max-width: 900px) {
+    .page-wrap,
+    .topbar {
+        padding: 1rem;
+    }
+
+    .section-head,
+    .formula-card__top,
+    .message-meta {
+        grid-template-columns: 1fr;
+        display: grid;
+    }
+
+    .ingredient-row {
+        grid-template-columns: 1fr;
+    }
+}
