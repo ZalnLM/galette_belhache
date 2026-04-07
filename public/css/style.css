@@ -70,19 +70,50 @@ button {
 }
 
 .topnav a,
-.topnav-button {
+.topnav-button,
+.nav-dropdown summary {
     padding: 0.7rem 0.95rem;
     border-radius: 999px;
     color: var(--muted);
     background: transparent;
     border: 0;
     cursor: pointer;
+    list-style: none;
 }
 
 .topnav a:hover,
-.topnav-button:hover {
+.topnav-button:hover,
+.nav-dropdown summary:hover,
+.nav-dropdown[open] summary {
     background: var(--panel-soft);
     color: var(--text);
+}
+
+.nav-dropdown {
+    position: relative;
+}
+
+.nav-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.nav-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 220px;
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: var(--panel);
+    border: 1px solid rgba(122, 74, 47, 0.12);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    z-index: 20;
+}
+
+.nav-dropdown__menu a {
+    border-radius: 12px;
 }
 
 .logout-form {
@@ -608,6 +639,15 @@ td {
         padding: 1rem;
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .nav-dropdown {
+        width: 100%;
+    }
+
+    .nav-dropdown__menu {
+        position: static;
+        min-width: 0;
     }
 
     .section-head,

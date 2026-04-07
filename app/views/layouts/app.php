@@ -13,17 +13,29 @@
             <nav class="topnav">
                 <?php if ($currentUser): ?>
                     <a href="/">Formules</a>
-                    <a href="/mes-demandes">Mes demandes</a>
+                    <?php if (($currentUser['role'] ?? '') !== 'admin'): ?>
+                        <a href="/mes-demandes">Mes demandes</a>
+                    <?php endif; ?>
                     <a href="/security">Securite</a>
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
-                        <a href="/admin">Admin</a>
-                        <a href="/admin/users">Utilisateurs</a>
-                        <a href="/admin/quote-requests">Demandes</a>
-                        <a href="/admin/quotes">Devis</a>
-                        <a href="/admin/fixed-fees">Frais</a>
-                        <a href="/admin/ingredients">Ingredients</a>
-                        <a href="/admin/recipes">Recettes</a>
-                        <a href="/admin/formulas">Formules</a>
+                        <details class="nav-dropdown">
+                            <summary>Devis</summary>
+                            <div class="nav-dropdown__menu">
+                                <a href="/admin/quote-requests">Demandes</a>
+                                <a href="/admin/quotes">Devis</a>
+                                <a href="/admin/fixed-fees">Frais</a>
+                            </div>
+                        </details>
+                        <details class="nav-dropdown">
+                            <summary>Catalogue</summary>
+                            <div class="nav-dropdown__menu">
+                                <a href="/admin">Tableau de bord</a>
+                                <a href="/admin/users">Utilisateurs</a>
+                                <a href="/admin/ingredients">Ingredients</a>
+                                <a href="/admin/recipes">Recettes</a>
+                                <a href="/admin/formulas">Formules</a>
+                            </div>
+                        </details>
                     <?php endif; ?>
                     <form method="post" action="/logout" class="logout-form">
                         <?= Csrf::input() ?>
