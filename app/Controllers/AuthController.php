@@ -379,6 +379,7 @@ class AuthController
         View::render('auth/security', [
             'pageTitle' => 'Securite',
             'account' => $user,
+            'emailVerified' => $this->isEmailVerified($user),
             'pendingSecret' => $pendingSecret,
             'otpAuthUri' => $otpAuthUri,
         ]);

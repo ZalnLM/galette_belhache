@@ -11,7 +11,7 @@
             <article class="subpanel">
                 <h2>Email</h2>
                 <p><strong>Adresse :</strong> <?= htmlspecialchars((string)$account['email'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p><strong>Validation :</strong> <?= !empty($account['email_verified_at']) ? 'Validee' : 'En attente' ?></p>
+                <p><strong>Validation :</strong> <?= !empty($emailVerified) ? 'Validee' : 'En attente' ?></p>
             </article>
 
             <article class="subpanel">
