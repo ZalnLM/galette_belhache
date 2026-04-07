@@ -164,11 +164,25 @@ class QuoteRequestController
             [(int)$id]
         )->fetchAll();
 
+        $quote = $this->db->query(
+            'SELECT * FROM quotes WHERE quote_request_id = ? ORDER BY id DESC LIMIT 1',
+            [(int)$id]
+        )->fetch();
+        $quoteLines = [];
+        if ($quote) {
+            $quoteLines = $this->db->query(
+                'SELECT * FROM quote_lines WHERE quote_id = ? ORDER BY id ASC',
+                [(int)$quote['id']]
+            )->fetchAll();
+        }
+
         View::render('quote_requests/show', [
             'pageTitle' => 'Demande de devis',
             'request' => $request,
             'formulas' => $formulas,
             'messages' => $messages,
+            'quote' => $quote,
+            'quoteLines' => $quoteLines,
         ]);
     }
 

@@ -79,8 +79,12 @@ $router->post('admin/formulas', [AdminController::class, 'storeFormula']);
 $router->get('admin/formulas/{id}/edit', [AdminController::class, 'editFormula']);
 $router->post('admin/formulas/{id}/update', [AdminController::class, 'updateFormula']);
 $router->post('admin/formulas/{id}/delete', [AdminController::class, 'deleteFormula']);
+$router->get('admin/quotes', [AdminController::class, 'quotes']);
+$router->get('admin/quotes/{id}', [AdminController::class, 'editQuote']);
+$router->post('admin/quotes/{id}/update', [AdminController::class, 'updateQuote']);
 $router->get('admin/quote-requests', [AdminController::class, 'quoteRequests']);
 $router->get('admin/quote-requests/{id}', [AdminController::class, 'showQuoteRequest']);
+$router->post('admin/quote-requests/{id}/quote/create', [AdminController::class, 'createQuoteFromRequest']);
 $router->post('admin/quote-requests/{id}/status', [AdminController::class, 'updateQuoteRequestStatus']);
 $router->post('admin/quote-requests/{id}/message', [AdminController::class, 'storeQuoteRequestMessage']);
 

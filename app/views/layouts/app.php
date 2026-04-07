@@ -18,6 +18,7 @@
                         <a href="/admin">Admin</a>
                         <a href="/admin/users">Utilisateurs</a>
                         <a href="/admin/quote-requests">Demandes</a>
+                        <a href="/admin/quotes">Devis</a>
                         <a href="/admin/ingredients">Ingredients</a>
                         <a href="/admin/recipes">Recettes</a>
                         <a href="/admin/formulas">Formules</a>

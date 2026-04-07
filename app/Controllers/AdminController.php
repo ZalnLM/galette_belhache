@@ -622,9 +622,11 @@ class AdminController
     {
         Auth::requireAdmin();
         $requests = $this->db->query(
-            'SELECT qr.*, u.first_name, u.last_name, u.email
+            'SELECT qr.*, u.first_name, u.last_name, u.email,
+                    q.id AS quote_id, q.quote_number, q.status AS quote_status, q.sale_total
              FROM quote_requests qr
              JOIN users u ON u.id = qr.user_id
+             LEFT JOIN quotes q ON q.quote_request_id = qr.id
              ORDER BY qr.created_at DESC'
         )->fetchAll();
 
@@ -667,12 +669,206 @@ class AdminController
             [(int)$id]
         )->fetchAll();
 
+        $quote = $this->findQuoteByRequestId((int)$id);
+
         View::render('admin/quote_request_show', [
             'pageTitle' => 'Detail demande',
             'request' => $request,
             'formulas' => $formulas,
             'messages' => $messages,
+            'quote' => $quote,
         ]);
+    }
+
+    public function createQuoteFromRequest(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $request = $this->db->query('SELECT * FROM quote_requests WHERE id = ?', [(int)$id])->fetch();
+        if (!$request) {
+            http_response_code(404);
+            exit('Demande introuvable.');
+        }
+
+        $existingQuote = $this->findQuoteByRequestId((int)$id);
+        if ($existingQuote) {
+            header('Location: /admin/quotes/' . (int)$existingQuote['id']);
+            exit;
+        }
+
+        $quoteNumber = $this->generateQuoteNumber();
+        $validUntil = (new DateTimeImmutable('+30 days'))->format('Y-m-d');
+        $eventDate = (string)$request['event_date'];
+
+        $this->db->query(
+            'INSERT INTO quotes
+                (quote_request_id, quote_number, valid_until, event_date, internal_cost_total, sale_total, fixed_fees_total, deposit_amount, legal_notes, terms_conditions, status, created_by)
+             VALUES (?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?)',
+            [
+                (int)$id,
+                $quoteNumber,
+                $validUntil,
+                $eventDate,
+                "Prix net en euros. Cout interne non visible par le client.",
+                "Acompte et conditions a confirmer avant envoi.",
+                'draft',
+                (int)Auth::user()['id'],
+            ]
+        );
+
+        $quoteId = $this->db->lastInsertId();
+
+        $formulaRows = $this->db->query(
+            'SELECT qrf.*, f.name
+             FROM quote_request_formulas qrf
+             JOIN formulas f ON f.id = qrf.formula_id
+             WHERE qrf.quote_request_id = ?
+             ORDER BY qrf.id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        foreach ($formulaRows as $row) {
+            $quantity = (float)$row['guest_count'];
+            $unitPrice = (float)$row['price_per_person_snapshot'];
+            $this->db->query(
+                'INSERT INTO quote_lines (quote_id, line_type, label, quantity, unit_price, total_price, formula_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $quoteId,
+                    'formula',
+                    (string)$row['name'],
+                    $quantity,
+                    $unitPrice,
+                    $quantity * $unitPrice,
+                    (int)$row['formula_id'],
+                ]
+            );
+        }
+
+        $this->recalculateQuoteTotals($quoteId);
+
+        if ((string)$request['status'] === 'demande_recue') {
+            $this->db->query('UPDATE quote_requests SET status = ? WHERE id = ?', ['en_cours_etude', (int)$id]);
+        }
+
+        Flash::set('success', 'Devis initialise a partir de la demande.');
+        header('Location: /admin/quotes/' . $quoteId);
+        exit;
+    }
+
+    public function quotes(): void
+    {
+        Auth::requireAdmin();
+
+        $quotes = $this->db->query(
+            'SELECT q.*, qr.event_name, qr.event_date, u.first_name, u.last_name
+             FROM quotes q
+             JOIN quote_requests qr ON qr.id = q.quote_request_id
+             JOIN users u ON u.id = qr.user_id
+             ORDER BY q.created_at DESC'
+        )->fetchAll();
+
+        View::render('admin/quotes', [
+            'pageTitle' => 'Devis',
+            'quotes' => $quotes,
+        ]);
+    }
+
+    public function editQuote(string $id): void
+    {
+        Auth::requireAdmin();
+
+        $quote = $this->db->query(
+            'SELECT q.*, qr.event_name, qr.event_type, qr.event_date AS request_event_date, qr.total_guests, qr.address, qr.phone,
+                    qr.status AS request_status, qr.id AS request_id, u.first_name, u.last_name, u.email
+             FROM quotes q
+             JOIN quote_requests qr ON qr.id = q.quote_request_id
+             JOIN users u ON u.id = qr.user_id
+             WHERE q.id = ?',
+            [(int)$id]
+        )->fetch();
+
+        if (!$quote) {
+            http_response_code(404);
+            exit('Devis introuvable.');
+        }
+
+        $lines = $this->db->query(
+            'SELECT ql.*, ff.name AS fixed_fee_name
+             FROM quote_lines ql
+             LEFT JOIN fixed_fees ff ON ff.id = ql.fixed_fee_id
+             WHERE ql.quote_id = ?
+             ORDER BY ql.id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        $fixedFees = $this->db->query(
+            'SELECT * FROM fixed_fees WHERE is_active = 1 ORDER BY name ASC'
+        )->fetchAll();
+
+        View::render('admin/quote_edit', [
+            'pageTitle' => 'Modifier devis',
+            'quote' => $quote,
+            'formulaLines' => array_values(array_filter($lines, static fn (array $line): bool => $line['line_type'] === 'formula')),
+            'fixedFeeLines' => array_values(array_filter($lines, static fn (array $line): bool => $line['line_type'] === 'fixed_fee')),
+            'freeFeeLines' => array_values(array_filter($lines, static fn (array $line): bool => $line['line_type'] === 'free_fee')),
+            'fixedFees' => $fixedFees,
+        ]);
+    }
+
+    public function updateQuote(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $quote = $this->db->query('SELECT * FROM quotes WHERE id = ?', [(int)$id])->fetch();
+        if (!$quote) {
+            http_response_code(404);
+            exit('Devis introuvable.');
+        }
+
+        $validUntil = trim((string)($_POST['valid_until'] ?? ''));
+        $eventDate = trim((string)($_POST['event_date'] ?? ''));
+        $depositAmount = (float)($_POST['deposit_amount'] ?? 0);
+        $status = (string)($_POST['status'] ?? 'draft');
+        $legalNotes = trim((string)($_POST['legal_notes'] ?? ''));
+        $termsConditions = trim((string)($_POST['terms_conditions'] ?? ''));
+
+        $allowedStatuses = ['draft', 'sent', 'accepted', 'refused', 'cancelled'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            Flash::set('danger', 'Statut de devis invalide.');
+            header('Location: /admin/quotes/' . (int)$id);
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE quotes
+             SET valid_until = ?, event_date = ?, deposit_amount = ?, legal_notes = ?, terms_conditions = ?, status = ?
+             WHERE id = ?',
+            [$validUntil !== '' ? $validUntil : null, $eventDate !== '' ? $eventDate : null, $depositAmount, $legalNotes, $termsConditions, $status, (int)$id]
+        );
+
+        $this->syncQuoteLines(
+            (int)$id,
+            $_POST['formula_formula_id'] ?? [],
+            $_POST['formula_label'] ?? [],
+            $_POST['formula_quantity'] ?? [],
+            $_POST['formula_unit_price'] ?? [],
+            $_POST['fixed_fee_id'] ?? [],
+            $_POST['fixed_fee_quantity'] ?? [],
+            $_POST['fixed_fee_unit_price'] ?? [],
+            $_POST['free_fee_label'] ?? [],
+            $_POST['free_fee_quantity'] ?? [],
+            $_POST['free_fee_unit_price'] ?? []
+        );
+
+        $this->recalculateQuoteTotals((int)$id);
+        $this->syncQuoteRequestStatusFromQuote((int)$quote['quote_request_id'], $status);
+
+        Flash::set('success', 'Devis mis a jour.');
+        header('Location: /admin/quotes/' . (int)$id);
+        exit;
     }
 
     public function updateQuoteRequestStatus(string $id): void
@@ -712,5 +908,181 @@ class AdminController
         Flash::set('success', 'Message admin envoye.');
         header('Location: /admin/quote-requests/' . (int)$id);
         exit;
+    }
+
+    private function findQuoteByRequestId(int $requestId): ?array
+    {
+        $quote = $this->db->query(
+            'SELECT * FROM quotes WHERE quote_request_id = ? ORDER BY id DESC LIMIT 1',
+            [$requestId]
+        )->fetch();
+
+        return $quote ?: null;
+    }
+
+    private function generateQuoteNumber(): string
+    {
+        $year = (new DateTimeImmutable())->format('Y');
+        $count = (int)$this->db->query(
+            "SELECT COUNT(*) FROM quotes WHERE quote_number LIKE ?",
+            ['LG-' . $year . '-%']
+        )->fetchColumn();
+
+        return sprintf('LG-%s-%04d', $year, $count + 1);
+    }
+
+    private function syncQuoteLines(
+        int $quoteId,
+        array $formulaIds,
+        array $formulaLabels,
+        array $formulaQuantities,
+        array $formulaUnitPrices,
+        array $fixedFeeIds,
+        array $fixedFeeQuantities,
+        array $fixedFeeUnitPrices,
+        array $freeFeeLabels,
+        array $freeFeeQuantities,
+        array $freeFeeUnitPrices
+    ): void {
+        $this->db->query('DELETE FROM quote_lines WHERE quote_id = ?', [$quoteId]);
+
+        foreach ($formulaIds as $index => $formulaId) {
+            $formulaId = (int)$formulaId;
+            $label = trim((string)($formulaLabels[$index] ?? ''));
+            $quantity = (float)($formulaQuantities[$index] ?? 0);
+            $unitPrice = (float)($formulaUnitPrices[$index] ?? 0);
+            if ($formulaId <= 0 || $label === '' || $quantity <= 0) {
+                continue;
+            }
+
+            $this->db->query(
+                'INSERT INTO quote_lines (quote_id, line_type, label, quantity, unit_price, total_price, formula_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [$quoteId, 'formula', $label, $quantity, $unitPrice, $quantity * $unitPrice, $formulaId]
+            );
+        }
+
+        foreach ($fixedFeeIds as $index => $fixedFeeId) {
+            $fixedFeeId = (int)$fixedFeeId;
+            $quantity = (float)($fixedFeeQuantities[$index] ?? 0);
+            $unitPrice = (float)($fixedFeeUnitPrices[$index] ?? 0);
+            if ($fixedFeeId <= 0 || $quantity <= 0) {
+                continue;
+            }
+
+            $label = (string)$this->db->query('SELECT name FROM fixed_fees WHERE id = ? LIMIT 1', [$fixedFeeId])->fetchColumn();
+            if ($label === '') {
+                continue;
+            }
+
+            $this->db->query(
+                'INSERT INTO quote_lines (quote_id, line_type, label, quantity, unit_price, total_price, fixed_fee_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [$quoteId, 'fixed_fee', $label, $quantity, $unitPrice, $quantity * $unitPrice, $fixedFeeId]
+            );
+        }
+
+        foreach ($freeFeeLabels as $index => $label) {
+            $label = trim((string)$label);
+            $quantity = (float)($freeFeeQuantities[$index] ?? 0);
+            $unitPrice = (float)($freeFeeUnitPrices[$index] ?? 0);
+            if ($label === '' || $quantity <= 0) {
+                continue;
+            }
+
+            $this->db->query(
+                'INSERT INTO quote_lines (quote_id, line_type, label, quantity, unit_price, total_price)
+                 VALUES (?, ?, ?, ?, ?, ?)',
+                [$quoteId, 'free_fee', $label, $quantity, $unitPrice, $quantity * $unitPrice]
+            );
+        }
+    }
+
+    private function recalculateQuoteTotals(int $quoteId): void
+    {
+        $saleTotal = (float)$this->db->query(
+            'SELECT COALESCE(SUM(total_price), 0) FROM quote_lines WHERE quote_id = ?',
+            [$quoteId]
+        )->fetchColumn();
+
+        $fixedFeesTotal = (float)$this->db->query(
+            "SELECT COALESCE(SUM(total_price), 0) FROM quote_lines WHERE quote_id = ? AND line_type IN ('fixed_fee', 'free_fee')",
+            [$quoteId]
+        )->fetchColumn();
+
+        $formulaLines = $this->db->query(
+            "SELECT formula_id, quantity
+             FROM quote_lines
+             WHERE quote_id = ? AND line_type = 'formula' AND formula_id IS NOT NULL",
+            [$quoteId]
+        )->fetchAll();
+
+        $internalCostTotal = 0.0;
+        foreach ($formulaLines as $line) {
+            $internalCostTotal += $this->estimateFormulaInternalCost((int)$line['formula_id'], (float)$line['quantity']);
+        }
+
+        $this->db->query(
+            'UPDATE quotes
+             SET internal_cost_total = ?, sale_total = ?, fixed_fees_total = ?
+             WHERE id = ?',
+            [$internalCostTotal, $saleTotal, $fixedFeesTotal, $quoteId]
+        );
+    }
+
+    private function estimateFormulaInternalCost(int $formulaId, float $guestCount): float
+    {
+        $formula = $this->db->query(
+            'SELECT minimum_guests FROM formulas WHERE id = ? LIMIT 1',
+            [$formulaId]
+        )->fetch();
+
+        if (!$formula) {
+            return 0.0;
+        }
+
+        $baseInternalCost = (float)$this->db->query(
+            'SELECT COALESCE(SUM(recipe_cost.internal_cost * fi.quantity), 0)
+             FROM formula_items fi
+             JOIN (
+                 SELECT r.id,
+                        COALESCE(SUM(
+                            CASE
+                                WHEN u.family = iu.family THEN ri.quantity / NULLIF(i.purchase_quantity, 0) * i.purchase_price
+                                WHEN u.family = "mass" AND iu.family = "mass" THEN ri.quantity / NULLIF(i.purchase_quantity, 0) * i.purchase_price
+                                WHEN u.family = "volume" AND iu.family = "volume" THEN ri.quantity / NULLIF(i.purchase_quantity, 0) * i.purchase_price
+                                WHEN u.family = "count" AND iu.family = "count" THEN ri.quantity / NULLIF(i.purchase_quantity, 0) * i.purchase_price
+                                ELSE 0
+                            END
+                        ), 0) AS internal_cost
+                 FROM recipes r
+                 LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
+                 LEFT JOIN ingredients i ON i.id = ri.ingredient_id
+                 LEFT JOIN units u ON u.id = ri.unit_id
+                 LEFT JOIN units iu ON iu.id = i.purchase_unit_id
+                 GROUP BY r.id
+             ) AS recipe_cost ON recipe_cost.id = fi.recipe_id
+             WHERE fi.formula_id = ?',
+            [$formulaId]
+        )->fetchColumn();
+
+        $minimumGuests = max(1, (int)$formula['minimum_guests']);
+        $multiplier = max(0.0, $guestCount) / $minimumGuests;
+
+        return $baseInternalCost * $multiplier;
+    }
+
+    private function syncQuoteRequestStatusFromQuote(int $requestId, string $quoteStatus): void
+    {
+        $mapping = [
+            'draft' => 'en_cours_etude',
+            'sent' => 'devis_envoye',
+            'accepted' => 'devis_accepte',
+            'refused' => 'devis_refuse',
+            'cancelled' => 'annule',
+        ];
+
+        $requestStatus = $mapping[$quoteStatus] ?? 'en_cours_etude';
+        $this->db->query('UPDATE quote_requests SET status = ? WHERE id = ?', [$requestStatus, $requestId]);
     }
 }

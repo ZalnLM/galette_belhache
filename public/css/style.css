@@ -404,6 +404,12 @@ td {
     grid-template-columns: minmax(0, 2fr) minmax(110px, 1fr) minmax(110px, 1fr);
 }
 
+.quote-line-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(110px, 0.8fr) minmax(140px, 1fr) minmax(180px, 1.1fr);
+    gap: 1rem;
+}
+
 .table-form {
     display: contents;
 }
@@ -607,6 +613,10 @@ td {
     }
 
     .ingredient-row {
+        grid-template-columns: 1fr;
+    }
+
+    .quote-line-row {
         grid-template-columns: 1fr;
     }
 }

@@ -46,6 +46,16 @@ $statusLabels = [
                         <dt>Email</dt>
                         <dd><?= htmlspecialchars($request['email'], ENT_QUOTES, 'UTF-8') ?></dd>
                     </div>
+                    <div>
+                        <dt>Devis</dt>
+                        <dd>
+                            <?php if (!empty($request['quote_id'])): ?>
+                                <?= htmlspecialchars((string)$request['quote_number'], ENT_QUOTES, 'UTF-8') ?> - <?= number_format((float)$request['sale_total'], 2, ',', ' ') ?> EUR
+                            <?php else: ?>
+                                Non cree
+                            <?php endif; ?>
+                        </dd>
+                    </div>
                 </dl>
 
                 <div class="actions-inline">

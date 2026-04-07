@@ -44,6 +44,22 @@
             </select>
             <button class="btn btn-primary" type="submit">Mettre a jour le statut</button>
         </form>
+
+        <article class="subpanel">
+            <h2>Devis</h2>
+            <?php if ($quote): ?>
+                <p><strong>Numero :</strong> <?= htmlspecialchars($quote['quote_number'], ENT_QUOTES, 'UTF-8') ?></p>
+                <p><strong>Statut :</strong> <?= htmlspecialchars((string)$quote['status'], ENT_QUOTES, 'UTF-8') ?></p>
+                <p><strong>Total :</strong> <?= number_format((float)$quote['sale_total'], 2, ',', ' ') ?> EUR</p>
+                <a class="btn btn-light" href="/admin/quotes/<?= (int)$quote['id'] ?>">Ouvrir le devis</a>
+            <?php else: ?>
+                <p class="text-muted">Aucun devis n a encore ete cree pour cette demande.</p>
+                <form method="post" action="/admin/quote-requests/<?= (int)$request['id'] ?>/quote/create">
+                    <?= Csrf::input() ?>
+                    <button class="btn btn-primary" type="submit">Creer le devis</button>
+                </form>
+            <?php endif; ?>
+        </article>
     </section>
 
     <section class="panel">

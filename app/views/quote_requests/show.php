@@ -28,6 +28,26 @@
     </div>
 
     <article class="subpanel">
+        <h2>Devis</h2>
+        <?php if (!empty($quote)): ?>
+            <p><strong>Numero :</strong> <?= htmlspecialchars($quote['quote_number'], ENT_QUOTES, 'UTF-8') ?></p>
+            <p><strong>Statut :</strong> <?= htmlspecialchars((string)$quote['status'], ENT_QUOTES, 'UTF-8') ?></p>
+            <p><strong>Valide jusqu au :</strong> <?= htmlspecialchars((string)$quote['valid_until'], ENT_QUOTES, 'UTF-8') ?></p>
+            <p><strong>Total :</strong> <?= number_format((float)$quote['sale_total'], 2, ',', ' ') ?> EUR</p>
+            <?php if ((float)$quote['deposit_amount'] > 0): ?>
+                <p><strong>Acompte :</strong> <?= number_format((float)$quote['deposit_amount'], 2, ',', ' ') ?> EUR</p>
+            <?php endif; ?>
+            <ul class="plain-list">
+                <?php foreach ($quoteLines as $line): ?>
+                    <li><?= htmlspecialchars($line['label'], ENT_QUOTES, 'UTF-8') ?> - <?= number_format((float)$line['quantity'], 2, ',', ' ') ?> x <?= number_format((float)$line['unit_price'], 2, ',', ' ') ?> EUR = <?= number_format((float)$line['total_price'], 2, ',', ' ') ?> EUR</li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="text-muted">Aucun devis n a encore ete prepare pour ce dossier.</p>
+        <?php endif; ?>
+    </article>
+
+    <article class="subpanel">
         <h2>Messagerie</h2>
         <div class="message-thread">
             <?php foreach ($messages as $message): ?>
