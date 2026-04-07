@@ -50,6 +50,11 @@
         </div>
         <form method="post" action="/admin/recipes" class="stack-lg">
             <?= Csrf::input() ?>
+            <datalist id="ingredient-suggestions">
+                <?php foreach ($ingredients as $ingredient): ?>
+                    <option value="<?= htmlspecialchars($ingredient['name'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php endforeach; ?>
+            </datalist>
             <div class="grid-form two-cols">
                 <label>
                     <span>Nom</span>
@@ -84,14 +89,9 @@
                 <h3>Ingredients</h3>
                 <?php for ($i = 0; $i < 4; $i++): ?>
                     <div class="ingredient-row">
-                        <select name="ingredient_id[]">
-                            <option value="">Ingredient</option>
-                            <?php foreach ($ingredients as $ingredient): ?>
-                                <option value="<?= (int)$ingredient['id'] ?>"><?= htmlspecialchars($ingredient['name'] . ' (' . $ingredient['purchase_unit'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <input type="text" name="ingredient_name[]" list="ingredient-suggestions" placeholder="Ingredient existant ou nouveau nom">
                         <input type="number" name="ingredient_quantity[]" step="0.01" min="0" placeholder="Quantite dans l unite de l ingredient">
-                        <div class="ingredient-unit-hint">Unite definie dans la fiche ingredient</div>
+                        <div class="ingredient-unit-hint">Si l ingredient n existe pas encore, il sera cree automatiquement puis a completer dans l admin ingredients.</div>
                     </div>
                 <?php endfor; ?>
             </div>

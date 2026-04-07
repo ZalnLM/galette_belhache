@@ -10,6 +10,11 @@
 
         <form method="post" action="/admin/recipes/<?= (int)$recipe['id'] ?>/update" class="stack-lg">
             <?= Csrf::input() ?>
+            <datalist id="ingredient-suggestions">
+                <?php foreach ($ingredients as $ingredient): ?>
+                    <option value="<?= htmlspecialchars($ingredient['name'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php endforeach; ?>
+            </datalist>
             <div class="grid-form two-cols">
                 <label>
                     <span>Nom</span>
@@ -50,16 +55,9 @@
                 ?>
                 <?php foreach ($rows as $row): ?>
                     <div class="ingredient-row">
-                        <select name="ingredient_id[]">
-                            <option value="">Ingredient</option>
-                            <?php foreach ($ingredients as $ingredient): ?>
-                                <option value="<?= (int)$ingredient['id'] ?>" <?= (int)$ingredient['id'] === (int)$row['ingredient_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($ingredient['name'] . ' (' . $ingredient['purchase_unit'] . ')', ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <input type="text" name="ingredient_name[]" list="ingredient-suggestions" value="<?= htmlspecialchars((string)($row['ingredient_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ingredient existant ou nouveau nom">
                         <input type="number" name="ingredient_quantity[]" step="0.01" min="0" value="<?= htmlspecialchars((string)$row['quantity'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Quantite dans l unite de l ingredient">
-                        <div class="ingredient-unit-hint">Unite definie dans la fiche ingredient</div>
+                        <div class="ingredient-unit-hint">Si l ingredient n existe pas encore, il sera cree automatiquement puis a completer dans l admin ingredients.</div>
                     </div>
                 <?php endforeach; ?>
             </div>

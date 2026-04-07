@@ -257,9 +257,13 @@ class AdminController
         );
 
         $recipeId = $this->db->lastInsertId();
-        $this->syncRecipeIngredients($recipeId, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? []);
+        $createdIngredients = $this->syncRecipeIngredients($recipeId, $_POST['ingredient_name'] ?? [], $_POST['ingredient_quantity'] ?? []);
 
-        Flash::set('success', 'Recette ajoutee.');
+        if ($createdIngredients !== []) {
+            Flash::set('warning', 'Recette ajoutee. Pense a completer les informations des nouveaux ingredients crees : ' . implode(', ', $createdIngredients) . '.');
+        } else {
+            Flash::set('success', 'Recette ajoutee.');
+        }
         header('Location: /admin/recipes');
         exit;
     }
@@ -275,8 +279,9 @@ class AdminController
         }
 
         $recipeIngredients = $this->db->query(
-            'SELECT ri.*
+            'SELECT ri.*, i.name AS ingredient_name
              FROM recipe_ingredients ri
+             JOIN ingredients i ON i.id = ri.ingredient_id
              WHERE ri.recipe_id = ?
              ORDER BY ri.id ASC',
             [(int)$id]
@@ -319,9 +324,13 @@ class AdminController
             [$name, $category, $description, $sellingPrice, $displayOrder, $isActive, (int)$id]
         );
 
-        $this->syncRecipeIngredients((int)$id, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? []);
+        $createdIngredients = $this->syncRecipeIngredients((int)$id, $_POST['ingredient_name'] ?? [], $_POST['ingredient_quantity'] ?? []);
 
-        Flash::set('success', 'Recette mise a jour.');
+        if ($createdIngredients !== []) {
+            Flash::set('warning', 'Recette mise a jour. Pense a completer les informations des nouveaux ingredients crees : ' . implode(', ', $createdIngredients) . '.');
+        } else {
+            Flash::set('success', 'Recette mise a jour.');
+        }
         header('Location: /admin/recipes');
         exit;
     }
@@ -346,14 +355,19 @@ class AdminController
         exit;
     }
 
-    private function syncRecipeIngredients(int $recipeId, array $ingredientIds, array $quantities): void
+    private function syncRecipeIngredients(int $recipeId, array $ingredientNames, array $quantities): array
     {
         $this->db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [$recipeId]);
+        $createdIngredients = [];
 
-        foreach ($ingredientIds as $index => $ingredientId) {
-            $ingredientId = (int)$ingredientId;
+        foreach ($ingredientNames as $index => $ingredientName) {
+            $ingredientName = trim((string)$ingredientName);
             $quantity = (float)($quantities[$index] ?? 0);
-            if ($ingredientId > 0 && $quantity > 0) {
+            if ($ingredientName !== '' && $quantity > 0) {
+                [$ingredientId, $wasCreated] = $this->resolveOrCreateIngredient($ingredientName);
+                if ($wasCreated) {
+                    $createdIngredients[] = $ingredientName;
+                }
                 $unitId = (int)$this->db->query(
                     'SELECT purchase_unit_id FROM ingredients WHERE id = ?',
                     [$ingredientId]
@@ -367,6 +381,35 @@ class AdminController
                 );
             }
         }
+
+        return array_values(array_unique($createdIngredients));
+    }
+
+    private function resolveOrCreateIngredient(string $ingredientName): array
+    {
+        $existingId = (int)$this->db->query(
+            'SELECT id FROM ingredients WHERE LOWER(name) = LOWER(?) LIMIT 1',
+            [$ingredientName]
+        )->fetchColumn();
+
+        if ($existingId > 0) {
+            return [$existingId, false];
+        }
+
+        $defaultUnitId = (int)$this->db->query(
+            "SELECT id FROM units WHERE symbol = 'unite' LIMIT 1"
+        )->fetchColumn();
+
+        if ($defaultUnitId <= 0) {
+            throw new RuntimeException('Unite par defaut introuvable pour la creation d ingredient.');
+        }
+
+        $this->db->query(
+            'INSERT INTO ingredients (name, purchase_quantity, purchase_unit_id, purchase_price, is_active) VALUES (?, 1, ?, 0, 0)',
+            [$ingredientName, $defaultUnitId]
+        );
+
+        return [$this->db->lastInsertId(), true];
     }
 
     public function formulas(): void
