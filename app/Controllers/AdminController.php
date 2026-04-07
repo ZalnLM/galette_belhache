@@ -139,6 +139,46 @@ class AdminController
         exit;
     }
 
+    public function updateIngredient(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $purchaseQuantity = (float)($_POST['purchase_quantity'] ?? 0);
+        $purchaseUnitId = (int)($_POST['purchase_unit_id'] ?? 0);
+        $purchasePrice = (float)($_POST['purchase_price'] ?? 0);
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '' || $purchaseQuantity <= 0 || $purchaseUnitId <= 0) {
+            Flash::set('danger', 'Nom, quantite de reference et unite sont obligatoires.');
+            header('Location: /admin/ingredients');
+            exit;
+        }
+
+        $exists = $this->db->query(
+            'SELECT id FROM ingredients WHERE name = ? AND id <> ? LIMIT 1',
+            [$name, (int)$id]
+        )->fetch();
+
+        if ($exists) {
+            Flash::set('danger', 'Un autre ingredient porte deja ce nom.');
+            header('Location: /admin/ingredients');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE ingredients
+             SET name = ?, purchase_quantity = ?, purchase_unit_id = ?, purchase_price = ?, is_active = ?
+             WHERE id = ?',
+            [$name, $purchaseQuantity, $purchaseUnitId, $purchasePrice, $isActive, (int)$id]
+        );
+
+        Flash::set('success', 'Ingredient mis a jour.');
+        header('Location: /admin/ingredients');
+        exit;
+    }
+
     public function deleteIngredient(string $id): void
     {
         Auth::requireAdmin();
@@ -219,9 +259,100 @@ class AdminController
         );
 
         $recipeId = $this->db->lastInsertId();
-        $ingredientIds = $_POST['ingredient_id'] ?? [];
-        $quantities = $_POST['ingredient_quantity'] ?? [];
-        $unitIds = $_POST['ingredient_unit_id'] ?? [];
+        $this->syncRecipeIngredients($recipeId, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? [], $_POST['ingredient_unit_id'] ?? []);
+
+        Flash::set('success', 'Recette ajoutee.');
+        header('Location: /admin/recipes');
+        exit;
+    }
+
+    public function editRecipe(string $id): void
+    {
+        Auth::requireAdmin();
+
+        $recipe = $this->db->query('SELECT * FROM recipes WHERE id = ?', [(int)$id])->fetch();
+        if (!$recipe) {
+            http_response_code(404);
+            exit('Recette introuvable.');
+        }
+
+        $recipeIngredients = $this->db->query(
+            'SELECT ri.*
+             FROM recipe_ingredients ri
+             WHERE ri.recipe_id = ?
+             ORDER BY ri.id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        $ingredients = $this->db->query('SELECT i.id, i.name, u.symbol AS purchase_unit FROM ingredients i JOIN units u ON u.id = i.purchase_unit_id ORDER BY i.name ASC')->fetchAll();
+        $units = $this->db->query('SELECT * FROM units ORDER BY family ASC, sort_order ASC, name ASC')->fetchAll();
+        $formulaUsageCount = (int)$this->db->query('SELECT COUNT(*) FROM formula_items WHERE recipe_id = ?', [(int)$id])->fetchColumn();
+
+        View::render('admin/recipe_edit', [
+            'pageTitle' => 'Modifier recette',
+            'recipe' => $recipe,
+            'recipeIngredients' => $recipeIngredients,
+            'ingredients' => $ingredients,
+            'units' => $units,
+            'formulaUsageCount' => $formulaUsageCount,
+        ]);
+    }
+
+    public function updateRecipe(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $category = in_array($_POST['category'] ?? '', ['sale', 'sucre'], true) ? $_POST['category'] : 'sale';
+        $description = trim((string)($_POST['description'] ?? ''));
+        $sellingPrice = (float)($_POST['selling_price'] ?? 0);
+        $displayOrder = (int)($_POST['display_order'] ?? 0);
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom de la recette est obligatoire.');
+            header('Location: /admin/recipes/' . (int)$id . '/edit');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE recipes
+             SET name = ?, category = ?, description = ?, selling_price = ?, display_order = ?, is_active = ?
+             WHERE id = ?',
+            [$name, $category, $description, $sellingPrice, $displayOrder, $isActive, (int)$id]
+        );
+
+        $this->syncRecipeIngredients((int)$id, $_POST['ingredient_id'] ?? [], $_POST['ingredient_quantity'] ?? [], $_POST['ingredient_unit_id'] ?? []);
+
+        Flash::set('success', 'Recette mise a jour.');
+        header('Location: /admin/recipes');
+        exit;
+    }
+
+    public function deleteRecipe(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $formulaUsageCount = (int)$this->db->query('SELECT COUNT(*) FROM formula_items WHERE recipe_id = ?', [(int)$id])->fetchColumn();
+        if ($formulaUsageCount > 0) {
+            Flash::set('danger', 'Impossible de supprimer cette recette car elle est utilisee dans une ou plusieurs formules.');
+            header('Location: /admin/recipes/' . (int)$id . '/edit');
+            exit;
+        }
+
+        $this->db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [(int)$id]);
+        $this->db->query('DELETE FROM recipes WHERE id = ?', [(int)$id]);
+
+        Flash::set('success', 'Recette supprimee.');
+        header('Location: /admin/recipes');
+        exit;
+    }
+
+    private function syncRecipeIngredients(int $recipeId, array $ingredientIds, array $quantities, array $unitIds): void
+    {
+        $this->db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [$recipeId]);
 
         foreach ($ingredientIds as $index => $ingredientId) {
             $ingredientId = (int)$ingredientId;
@@ -234,10 +365,6 @@ class AdminController
                 );
             }
         }
-
-        Flash::set('success', 'Recette ajoutee.');
-        header('Location: /admin/recipes');
-        exit;
     }
 
     public function formulas(): void

@@ -374,6 +374,25 @@ td {
     grid-template-columns: minmax(0, 2fr) minmax(110px, 1fr) minmax(110px, 1fr);
 }
 
+.table-form {
+    display: contents;
+}
+
+.table-form__cell {
+    min-width: 220px;
+}
+
+.inline-split {
+    display: grid;
+    grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr);
+    gap: 0.6rem;
+}
+
+.table-actions {
+    display: grid;
+    gap: 0.5rem;
+}
+
 .stack-md {
     gap: 0.9rem;
 }

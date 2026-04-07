@@ -20,15 +20,36 @@
                 <tbody>
                     <?php foreach ($ingredients as $ingredient): ?>
                         <tr>
-                            <td><?= htmlspecialchars($ingredient['name'], ENT_QUOTES, 'UTF-8') ?></td>
                             <td>
-                                <?= number_format((float)$ingredient['purchase_quantity'], 2, ',', ' ') ?>
-                                <?= htmlspecialchars($ingredient['purchase_unit_symbol'], ENT_QUOTES, 'UTF-8') ?>
+                                <form method="post" action="/admin/ingredients/<?= (int)$ingredient['id'] ?>/update" class="table-form">
+                                    <?= Csrf::input() ?>
+                                    <input type="text" name="name" value="<?= htmlspecialchars($ingredient['name'], ENT_QUOTES, 'UTF-8') ?>" required>
                             </td>
-                            <td><?= number_format((float)$ingredient['purchase_price'], 2, ',', ' ') ?> EUR</td>
-                            <td><?= (int)$ingredient['recipe_usage_count'] ?></td>
-                            <td><?= (int)$ingredient['is_active'] === 1 ? 'Oui' : 'Non' ?></td>
+                            <td class="table-form__cell">
+                                    <div class="inline-split">
+                                        <input type="number" name="purchase_quantity" step="0.01" min="0.01" value="<?= htmlspecialchars((string)$ingredient['purchase_quantity'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                        <select name="purchase_unit_id" required>
+                                            <?php foreach ($units as $unit): ?>
+                                                <option value="<?= (int)$unit['id'] ?>" <?= (int)$unit['id'] === (int)$ingredient['purchase_unit_id'] ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($unit['symbol'], ENT_QUOTES, 'UTF-8') ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                            </td>
                             <td>
+                                    <input type="number" name="purchase_price" step="0.01" min="0" value="<?= htmlspecialchars((string)$ingredient['purchase_price'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </td>
+                            <td><?= (int)$ingredient['recipe_usage_count'] ?></td>
+                            <td>
+                                    <label class="check">
+                                        <input type="checkbox" name="is_active" <?= (int)$ingredient['is_active'] === 1 ? 'checked' : '' ?>>
+                                        <span><?= (int)$ingredient['is_active'] === 1 ? 'Oui' : 'Non' ?></span>
+                                    </label>
+                            </td>
+                            <td class="table-actions">
+                                    <button class="btn btn-light" type="submit">Mettre a jour</button>
+                                </form>
                                 <?php if ((int)$ingredient['recipe_usage_count'] === 0): ?>
                                     <form method="post" action="/admin/ingredients/<?= (int)$ingredient['id'] ?>/delete" onsubmit="return confirm('Supprimer cet ingredient ?');">
                                         <?= Csrf::input() ?>

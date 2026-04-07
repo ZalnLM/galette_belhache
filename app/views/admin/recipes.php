@@ -14,6 +14,7 @@
                         <th>Prix vente</th>
                         <th>Cout interne</th>
                         <th>Actif</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -24,6 +25,7 @@
                             <td><?= number_format((float)$recipe['selling_price'], 2, ',', ' ') ?> EUR</td>
                             <td><?= number_format((float)$recipe['internal_cost'], 2, ',', ' ') ?> EUR</td>
                             <td><?= (int)$recipe['is_active'] === 1 ? 'Oui' : 'Non' ?></td>
+                            <td><a class="btn btn-light" href="/admin/recipes/<?= (int)$recipe['id'] ?>/edit">Modifier</a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
