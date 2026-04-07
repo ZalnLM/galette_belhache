@@ -30,6 +30,7 @@
                             <summary>Catalogue</summary>
                             <div class="nav-dropdown__menu">
                                 <a href="/admin">Tableau de bord</a>
+                                <a href="/admin/homepage">Accueil</a>
                                 <a href="/admin/users">Utilisateurs</a>
                                 <a href="/admin/ingredients">Ingredients</a>
                                 <a href="/admin/recipes">Recettes</a>

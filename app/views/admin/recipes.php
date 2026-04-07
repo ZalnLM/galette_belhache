@@ -8,6 +8,11 @@
         <div class="recipes-admin-grid">
             <?php foreach ($recipes as $recipe): ?>
                 <article class="recipe-admin-card">
+                    <?php if (!empty($recipe['photo_path'])): ?>
+                        <div class="media-preview media-preview-card">
+                            <img src="<?= htmlspecialchars((string)$recipe['photo_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($recipe['name'], ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    <?php endif; ?>
                     <div class="recipe-admin-card__head">
                         <div>
                             <p class="eyebrow">Recette</p>
@@ -48,7 +53,7 @@
         <div class="section-head">
             <h2>Ajouter une recette</h2>
         </div>
-        <form method="post" action="/admin/recipes" class="stack-lg">
+        <form method="post" action="/admin/recipes" enctype="multipart/form-data" class="stack-lg">
             <?= Csrf::input() ?>
             <datalist id="ingredient-suggestions">
                 <?php foreach ($ingredients as $ingredient): ?>
@@ -78,6 +83,10 @@
                 <label class="full">
                     <span>Description</span>
                     <textarea name="description" rows="3"></textarea>
+                </label>
+                <label class="full">
+                    <span>Photo</span>
+                    <input type="file" name="recipe_photo" accept="image/jpeg,image/png,image/webp">
                 </label>
                 <label class="check">
                     <input type="checkbox" name="is_active" checked>

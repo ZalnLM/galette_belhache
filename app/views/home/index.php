@@ -1,8 +1,13 @@
-<section class="hero">
+<section class="hero hero-media <?= $heroImage !== '' ? 'hero-media--with-image' : '' ?>">
+    <?php if ($heroImage !== ''): ?>
+        <div class="hero-media__visual">
+            <img src="<?= htmlspecialchars($heroImage, ENT_QUOTES, 'UTF-8') ?>" alt="Illustration d accueil">
+        </div>
+    <?php endif; ?>
     <div>
         <p class="eyebrow">Catalogue prive</p>
-        <h1>Choisis tes formules et envoie une demande de devis</h1>
-        <p>Chaque formule affiche son contenu, son minimum de convives et, si l admin le souhaite, son prix par personne.</p>
+        <h1><?= htmlspecialchars($heroTitle, ENT_QUOTES, 'UTF-8') ?></h1>
+        <p><?= nl2br(htmlspecialchars($heroText, ENT_QUOTES, 'UTF-8')) ?></p>
     </div>
 </section>
 

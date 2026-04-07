@@ -141,6 +141,28 @@ button {
     padding: 2rem;
 }
 
+.hero-media {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.hero-media--with-image {
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    align-items: center;
+}
+
+.hero-media__visual img,
+.media-preview img {
+    width: 100%;
+    display: block;
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+.hero-media__visual img {
+    max-height: 320px;
+}
+
 .hero-tight {
     padding: 1.5rem 2rem;
 }
@@ -601,6 +623,21 @@ td {
     gap: 1rem;
 }
 
+.media-preview {
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--panel-soft);
+}
+
+.media-preview-card {
+    margin-bottom: 1rem;
+}
+
+.media-preview-card img {
+    height: 220px;
+}
+
 .recipe-admin-card__head {
     display: flex;
     justify-content: space-between;
@@ -672,6 +709,10 @@ td {
     }
 
     .quote-line-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-media--with-image {
         grid-template-columns: 1fr;
     }
 }

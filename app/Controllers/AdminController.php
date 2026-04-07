@@ -174,6 +174,64 @@ class AdminController
         ]);
     }
 
+    public function homepage(): void
+    {
+        Auth::requireAdmin();
+
+        $settingsRows = $this->db->query(
+            'SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN (?, ?, ?)',
+            ['home_hero_title', 'home_hero_text', 'home_hero_image']
+        )->fetchAll();
+        $settings = [];
+        foreach ($settingsRows as $row) {
+            $settings[(string)$row['setting_key']] = $row['setting_value'];
+        }
+
+        View::render('admin/homepage', [
+            'pageTitle' => 'Accueil',
+            'settings' => $settings,
+        ]);
+    }
+
+    public function updateHomepage(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $title = trim((string)($_POST['hero_title'] ?? ''));
+        $text = trim((string)($_POST['hero_text'] ?? ''));
+        $currentImage = (string)($_POST['current_image'] ?? '');
+        $removeImage = isset($_POST['remove_image']);
+
+        $heroImage = $currentImage;
+        if ($removeImage) {
+            Uploads::deleteIfPresent($currentImage);
+            $heroImage = '';
+        }
+
+        try {
+            $uploadedImage = Uploads::storeImage($_FILES['hero_image'] ?? [], 'homepage');
+            if ($uploadedImage !== null) {
+                if ($currentImage !== '' && $currentImage !== $uploadedImage) {
+                    Uploads::deleteIfPresent($currentImage);
+                }
+                $heroImage = $uploadedImage;
+            }
+        } catch (RuntimeException $exception) {
+            Flash::set('danger', $exception->getMessage());
+            header('Location: /admin/homepage');
+            exit;
+        }
+
+        $this->upsertSetting('home_hero_title', $title);
+        $this->upsertSetting('home_hero_text', $text);
+        $this->upsertSetting('home_hero_image', $heroImage);
+
+        Flash::set('success', 'Contenu de la page d accueil mis a jour.');
+        header('Location: /admin/homepage');
+        exit;
+    }
+
     public function storeFixedFee(): void
     {
         Auth::requireAdmin();
@@ -413,9 +471,11 @@ class AdminController
             exit;
         }
 
+        $photoPath = $this->safeHandleImageUpload('recipe_photo', 'recipes', '/admin/recipes');
+
         $this->db->query(
-            'INSERT INTO recipes (name, category, description, selling_price, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-            [$name, $category, $description, $sellingPrice, $displayOrder, $isActive]
+            'INSERT INTO recipes (name, category, description, photo_path, selling_price, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [$name, $category, $description, $photoPath, $sellingPrice, $displayOrder, $isActive]
         );
 
         $recipeId = $this->db->lastInsertId();
@@ -479,11 +539,23 @@ class AdminController
             exit;
         }
 
+        $existingPhoto = (string)$this->db->query('SELECT photo_path FROM recipes WHERE id = ?', [(int)$id])->fetchColumn();
+        if (isset($_POST['remove_photo'])) {
+            Uploads::deleteIfPresent($existingPhoto);
+            $existingPhoto = '';
+        }
+        $photoPath = $this->safeHandleImageUpload('recipe_photo', 'recipes', '/admin/recipes/' . (int)$id . '/edit');
+        if ($photoPath !== null) {
+            if ($existingPhoto !== '' && $existingPhoto !== $photoPath) {
+                Uploads::deleteIfPresent($existingPhoto);
+            }
+            $existingPhoto = $photoPath;
+        }
         $this->db->query(
             'UPDATE recipes
-             SET name = ?, category = ?, description = ?, selling_price = ?, display_order = ?, is_active = ?
+             SET name = ?, category = ?, description = ?, photo_path = ?, selling_price = ?, display_order = ?, is_active = ?
              WHERE id = ?',
-            [$name, $category, $description, $sellingPrice, $displayOrder, $isActive, (int)$id]
+            [$name, $category, $description, $existingPhoto !== '' ? $existingPhoto : null, $sellingPrice, $displayOrder, $isActive, (int)$id]
         );
 
         $createdIngredients = $this->syncRecipeIngredients((int)$id, $_POST['ingredient_name'] ?? [], $_POST['ingredient_quantity'] ?? []);
@@ -510,6 +582,8 @@ class AdminController
         }
 
         $this->db->query('DELETE FROM recipe_ingredients WHERE recipe_id = ?', [(int)$id]);
+        $photoPath = (string)$this->db->query('SELECT photo_path FROM recipes WHERE id = ?', [(int)$id])->fetchColumn();
+        Uploads::deleteIfPresent($photoPath);
         $this->db->query('DELETE FROM recipes WHERE id = ?', [(int)$id]);
 
         Flash::set('success', 'Recette supprimee.');
@@ -615,10 +689,12 @@ class AdminController
             exit;
         }
 
+        $photoPath = $this->safeHandleImageUpload('formula_photo', 'formulas', '/admin/formulas');
+
         $this->db->query(
-            'INSERT INTO formulas (name, description, price_per_person, minimum_guests, is_price_visible, display_order, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [$name, $description, $pricePerPerson, $minimumGuests, $isPriceVisible, $displayOrder, $isActive]
+            'INSERT INTO formulas (name, description, photo_path, price_per_person, minimum_guests, is_price_visible, display_order, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [$name, $description, $photoPath, $pricePerPerson, $minimumGuests, $isPriceVisible, $displayOrder, $isActive]
         );
 
         $formulaId = $this->db->lastInsertId();
@@ -679,11 +755,23 @@ class AdminController
             exit;
         }
 
+        $existingPhoto = (string)$this->db->query('SELECT photo_path FROM formulas WHERE id = ?', [(int)$id])->fetchColumn();
+        if (isset($_POST['remove_photo'])) {
+            Uploads::deleteIfPresent($existingPhoto);
+            $existingPhoto = '';
+        }
+        $photoPath = $this->safeHandleImageUpload('formula_photo', 'formulas', '/admin/formulas/' . (int)$id . '/edit');
+        if ($photoPath !== null) {
+            if ($existingPhoto !== '' && $existingPhoto !== $photoPath) {
+                Uploads::deleteIfPresent($existingPhoto);
+            }
+            $existingPhoto = $photoPath;
+        }
         $this->db->query(
             'UPDATE formulas
-             SET name = ?, description = ?, price_per_person = ?, minimum_guests = ?, is_price_visible = ?, display_order = ?, is_active = ?
+             SET name = ?, description = ?, photo_path = ?, price_per_person = ?, minimum_guests = ?, is_price_visible = ?, display_order = ?, is_active = ?
              WHERE id = ?',
-            [$name, $description, $pricePerPerson, $minimumGuests, $isPriceVisible, $displayOrder, $isActive, (int)$id]
+            [$name, $description, $existingPhoto !== '' ? $existingPhoto : null, $pricePerPerson, $minimumGuests, $isPriceVisible, $displayOrder, $isActive, (int)$id]
         );
 
         $this->syncFormulaItems((int)$id, $_POST['recipe_id'] ?? [], $_POST['recipe_quantity'] ?? []);
@@ -706,6 +794,8 @@ class AdminController
         }
 
         $this->db->query('DELETE FROM formula_items WHERE formula_id = ?', [(int)$id]);
+        $photoPath = (string)$this->db->query('SELECT photo_path FROM formulas WHERE id = ?', [(int)$id])->fetchColumn();
+        Uploads::deleteIfPresent($photoPath);
         $this->db->query('DELETE FROM formulas WHERE id = ?', [(int)$id]);
 
         Flash::set('success', 'Formule supprimee.');
@@ -1234,5 +1324,27 @@ class AdminController
 
         $requestStatus = $mapping[$quoteStatus] ?? 'en_cours_etude';
         $this->db->query('UPDATE quote_requests SET status = ? WHERE id = ?', [$requestStatus, $requestId]);
+    }
+
+    private function safeHandleImageUpload(string $fieldName, string $directory, string $redirectPath): ?string
+    {
+        try {
+            return Uploads::storeImage($_FILES[$fieldName] ?? [], $directory);
+        } catch (RuntimeException $exception) {
+            Flash::set('danger', $exception->getMessage());
+            header('Location: ' . $redirectPath);
+            exit;
+        }
+    }
+
+    private function upsertSetting(string $key, string $value): void
+    {
+        $exists = $this->db->query('SELECT setting_key FROM site_settings WHERE setting_key = ? LIMIT 1', [$key])->fetch();
+        if ($exists) {
+            $this->db->query('UPDATE site_settings SET setting_value = ? WHERE setting_key = ?', [$value, $key]);
+            return;
+        }
+
+        $this->db->query('INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)', [$key, $value]);
     }
 }

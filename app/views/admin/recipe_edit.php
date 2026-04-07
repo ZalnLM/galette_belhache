@@ -8,7 +8,7 @@
             <a class="btn btn-light" href="/admin/recipes">Retour aux recettes</a>
         </div>
 
-        <form method="post" action="/admin/recipes/<?= (int)$recipe['id'] ?>/update" class="stack-lg">
+        <form method="post" action="/admin/recipes/<?= (int)$recipe['id'] ?>/update" enctype="multipart/form-data" class="stack-lg">
             <?= Csrf::input() ?>
             <datalist id="ingredient-suggestions">
                 <?php foreach ($ingredients as $ingredient): ?>
@@ -39,11 +39,27 @@
                     <span>Description</span>
                     <textarea name="description" rows="4"><?= htmlspecialchars((string)$recipe['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
                 </label>
+                <label class="full">
+                    <span>Photo</span>
+                    <input type="file" name="recipe_photo" accept="image/jpeg,image/png,image/webp">
+                </label>
+                <?php if (!empty($recipe['photo_path'])): ?>
+                    <label class="check">
+                        <input type="checkbox" name="remove_photo">
+                        <span>Supprimer la photo actuelle</span>
+                    </label>
+                <?php endif; ?>
                 <label class="check">
                     <input type="checkbox" name="is_active" <?= (int)$recipe['is_active'] === 1 ? 'checked' : '' ?>>
                     <span>Recette active</span>
                 </label>
             </div>
+
+            <?php if (!empty($recipe['photo_path'])): ?>
+                <div class="media-preview">
+                    <img src="<?= htmlspecialchars((string)$recipe['photo_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($recipe['name'], ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+            <?php endif; ?>
 
             <div class="stack-md">
                 <h2>Ingredients de la recette</h2>

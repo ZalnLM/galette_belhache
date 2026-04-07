@@ -8,7 +8,7 @@
             <a class="btn btn-light" href="/admin/formulas">Retour aux formules</a>
         </div>
 
-        <form method="post" action="/admin/formulas/<?= (int)$formula['id'] ?>/update" class="stack-lg">
+        <form method="post" action="/admin/formulas/<?= (int)$formula['id'] ?>/update" enctype="multipart/form-data" class="stack-lg">
             <?= Csrf::input() ?>
             <div class="grid-form two-cols">
                 <label>
@@ -31,6 +31,16 @@
                     <span>Description</span>
                     <textarea name="description" rows="4"><?= htmlspecialchars((string)$formula['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
                 </label>
+                <label class="full">
+                    <span>Photo</span>
+                    <input type="file" name="formula_photo" accept="image/jpeg,image/png,image/webp">
+                </label>
+                <?php if (!empty($formula['photo_path'])): ?>
+                    <label class="check">
+                        <input type="checkbox" name="remove_photo">
+                        <span>Supprimer la photo actuelle</span>
+                    </label>
+                <?php endif; ?>
                 <label class="check">
                     <input type="checkbox" name="is_price_visible" <?= (int)$formula['is_price_visible'] === 1 ? 'checked' : '' ?>>
                     <span>Afficher le prix cote utilisateur</span>
@@ -40,6 +50,12 @@
                     <span>Formule active</span>
                 </label>
             </div>
+
+            <?php if (!empty($formula['photo_path'])): ?>
+                <div class="media-preview">
+                    <img src="<?= htmlspecialchars((string)$formula['photo_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($formula['name'], ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+            <?php endif; ?>
 
             <div class="stack-md">
                 <h2>Galettes incluses</h2>

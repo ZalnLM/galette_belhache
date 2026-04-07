@@ -8,6 +8,11 @@
         <div class="recipes-admin-grid">
             <?php foreach ($formulas as $formula): ?>
                 <article class="recipe-admin-card">
+                    <?php if (!empty($formula['photo_path'])): ?>
+                        <div class="media-preview media-preview-card">
+                            <img src="<?= htmlspecialchars((string)$formula['photo_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($formula['name'], ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    <?php endif; ?>
                     <div class="recipe-admin-card__head">
                         <div>
                             <p class="eyebrow">Formule</p>
@@ -48,7 +53,7 @@
         <div class="section-head">
             <h2>Ajouter une formule</h2>
         </div>
-        <form method="post" action="/admin/formulas" class="stack-lg">
+        <form method="post" action="/admin/formulas" enctype="multipart/form-data" class="stack-lg">
             <?= Csrf::input() ?>
             <div class="grid-form two-cols">
                 <label>
@@ -70,6 +75,10 @@
                 <label class="full">
                     <span>Description</span>
                     <textarea name="description" rows="3"></textarea>
+                </label>
+                <label class="full">
+                    <span>Photo</span>
+                    <input type="file" name="formula_photo" accept="image/jpeg,image/png,image/webp">
                 </label>
                 <label class="check">
                     <input type="checkbox" name="is_price_visible" checked>

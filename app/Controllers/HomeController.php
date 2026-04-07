@@ -14,6 +14,15 @@ class HomeController
     {
         Auth::requireLogin();
 
+        $settingsRows = $this->db->query(
+            'SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN (?, ?, ?)',
+            ['home_hero_title', 'home_hero_text', 'home_hero_image']
+        )->fetchAll();
+        $settings = [];
+        foreach ($settingsRows as $row) {
+            $settings[(string)$row['setting_key']] = $row['setting_value'];
+        }
+
         $formulas = $this->db->query(
             "SELECT f.*,
                     GROUP_CONCAT(CONCAT(r.name, ' x', fi.quantity) ORDER BY r.display_order, r.name SEPARATOR ' • ') AS recipe_summary
@@ -28,6 +37,9 @@ class HomeController
         View::render('home/index', [
             'pageTitle' => 'Formules',
             'formulas' => $formulas,
+            'heroTitle' => (string)($settings['home_hero_title'] ?? 'Choisis tes formules et envoie une demande de devis'),
+            'heroText' => (string)($settings['home_hero_text'] ?? 'Chaque formule affiche son contenu, son minimum de convives et, si l admin le souhaite, son prix par personne.'),
+            'heroImage' => (string)($settings['home_hero_image'] ?? ''),
         ]);
     }
 }
