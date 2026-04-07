@@ -357,11 +357,11 @@ class AuthController
         exit;
     }
 
-    public function security(): void
+    public function profile(): void
     {
         Auth::requireLogin();
         $user = $this->db->query(
-            'SELECT id, email, two_factor_secret, two_factor_enabled, email_verified_at
+            'SELECT id, first_name, last_name, email, two_factor_secret, two_factor_enabled, email_verified_at
              FROM users WHERE id = ? LIMIT 1',
             [(int)Auth::user()['id']]
         )->fetch();
@@ -377,7 +377,7 @@ class AuthController
         }
 
         View::render('auth/security', [
-            'pageTitle' => 'Securite',
+            'pageTitle' => 'Profil',
             'account' => $user,
             'emailVerified' => $this->isEmailVerified($user),
             'pendingSecret' => $pendingSecret,
@@ -392,7 +392,7 @@ class AuthController
 
         $_SESSION['two_factor_setup_secret'] = Totp::generateSecret();
         Flash::set('success', 'Cle 2FA preparee. Configure-la dans ton application d authentification puis valide avec un code.');
-        header('Location: /security');
+        header('Location: /profil');
         exit;
     }
 
@@ -406,13 +406,13 @@ class AuthController
 
         if ($secret === '') {
             Flash::set('warning', 'Commence par preparer la configuration 2FA.');
-            header('Location: /security');
+            header('Location: /profil');
             exit;
         }
 
         if (!Totp::verifyCode($secret, $code)) {
             Flash::set('danger', 'Code 2FA invalide. Verifie la configuration de ton application.');
-            header('Location: /security');
+            header('Location: /profil');
             exit;
         }
 
@@ -423,7 +423,7 @@ class AuthController
 
         unset($_SESSION['two_factor_setup_secret']);
         Flash::set('success', 'La verification en deux etapes est maintenant activee.');
-        header('Location: /security');
+        header('Location: /profil');
         exit;
     }
 
@@ -439,14 +439,14 @@ class AuthController
 
         if (!$user || (int)($user['two_factor_enabled'] ?? 0) !== 1) {
             Flash::set('warning', 'Le 2FA n est pas actif sur ce compte.');
-            header('Location: /security');
+            header('Location: /profil');
             exit;
         }
 
         $code = trim((string)($_POST['code'] ?? ''));
         if (!Totp::verifyCode((string)$user['two_factor_secret'], $code)) {
             Flash::set('danger', 'Code 2FA invalide.');
-            header('Location: /security');
+            header('Location: /profil');
             exit;
         }
 
@@ -457,7 +457,7 @@ class AuthController
 
         unset($_SESSION['two_factor_setup_secret']);
         Flash::set('success', 'La verification en deux etapes a ete desactivee.');
-        header('Location: /security');
+        header('Location: /profil');
         exit;
     }
 

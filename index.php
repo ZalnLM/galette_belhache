@@ -60,7 +60,7 @@ $router->get('forgot-password', [AuthController::class, 'forgotPassword']);
 $router->post('forgot-password', [AuthController::class, 'storeForgotPassword']);
 $router->get('reset-password', [AuthController::class, 'resetPassword']);
 $router->post('reset-password', [AuthController::class, 'storeResetPassword']);
-$router->get('security', [AuthController::class, 'security']);
+$router->get('profil', [AuthController::class, 'profile']);
 $router->post('security/two-factor/prepare', [AuthController::class, 'prepareTwoFactor']);
 $router->post('security/two-factor/enable', [AuthController::class, 'enableTwoFactor']);
 $router->post('security/two-factor/disable', [AuthController::class, 'disableTwoFactor']);

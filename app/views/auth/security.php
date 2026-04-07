@@ -3,11 +3,18 @@
         <div class="section-head">
             <div>
                 <p class="eyebrow">Compte</p>
-                <h1>Securite</h1>
+                <h1>Profil</h1>
             </div>
         </div>
 
         <div class="details-grid">
+            <article class="subpanel">
+                <h2>Informations personnelles</h2>
+                <p><strong>Prenom :</strong> <?= htmlspecialchars((string)($account['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <p><strong>Nom :</strong> <?= htmlspecialchars((string)($account['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="text-muted">Cette section servira ensuite a accueillir d autres donnees personnelles du compte.</p>
+            </article>
+
             <article class="subpanel">
                 <h2>Email</h2>
                 <p><strong>Adresse :</strong> <?= htmlspecialchars((string)$account['email'], ENT_QUOTES, 'UTF-8') ?></p>

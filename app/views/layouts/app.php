@@ -16,7 +16,7 @@
                     <?php if (($currentUser['role'] ?? '') !== 'admin'): ?>
                         <a href="/mes-demandes">Mes demandes</a>
                     <?php endif; ?>
-                    <a href="/security">Securite</a>
+                    <a href="/profil">Profil</a>
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
                         <details class="nav-dropdown">
                             <summary>Devis</summary>
