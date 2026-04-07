@@ -74,6 +74,93 @@ class AdminController
         exit;
     }
 
+    public function ingredients(): void
+    {
+        Auth::requireAdmin();
+
+        $ingredients = $this->db->query(
+            'SELECT i.*, u.name AS purchase_unit_name, u.symbol AS purchase_unit_symbol,
+                    (
+                        SELECT COUNT(*)
+                        FROM recipe_ingredients ri
+                        WHERE ri.ingredient_id = i.id
+                    ) AS recipe_usage_count
+             FROM ingredients i
+             JOIN units u ON u.id = i.purchase_unit_id
+             ORDER BY i.name ASC'
+        )->fetchAll();
+
+        $units = $this->db->query(
+            'SELECT * FROM units WHERE is_active = 1 ORDER BY family ASC, sort_order ASC, name ASC'
+        )->fetchAll();
+
+        View::render('admin/ingredients', [
+            'pageTitle' => 'Ingredients',
+            'ingredients' => $ingredients,
+            'units' => $units,
+        ]);
+    }
+
+    public function storeIngredient(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $purchaseQuantity = (float)($_POST['purchase_quantity'] ?? 0);
+        $purchaseUnitId = (int)($_POST['purchase_unit_id'] ?? 0);
+        $purchasePrice = (float)($_POST['purchase_price'] ?? 0);
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '' || $purchaseQuantity <= 0 || $purchaseUnitId <= 0) {
+            Flash::set('danger', 'Nom, quantite de reference et unite sont obligatoires.');
+            header('Location: /admin/ingredients');
+            exit;
+        }
+
+        $exists = $this->db->query(
+            'SELECT id FROM ingredients WHERE name = ? LIMIT 1',
+            [$name]
+        )->fetch();
+
+        if ($exists) {
+            Flash::set('danger', 'Un ingredient avec ce nom existe deja.');
+            header('Location: /admin/ingredients');
+            exit;
+        }
+
+        $this->db->query(
+            'INSERT INTO ingredients (name, purchase_quantity, purchase_unit_id, purchase_price, is_active) VALUES (?, ?, ?, ?, ?)',
+            [$name, $purchaseQuantity, $purchaseUnitId, $purchasePrice, $isActive]
+        );
+
+        Flash::set('success', 'Ingredient ajoute.');
+        header('Location: /admin/ingredients');
+        exit;
+    }
+
+    public function deleteIngredient(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $usageCount = (int)$this->db->query(
+            'SELECT COUNT(*) FROM recipe_ingredients WHERE ingredient_id = ?',
+            [(int)$id]
+        )->fetchColumn();
+
+        if ($usageCount > 0) {
+            Flash::set('danger', 'Impossible de supprimer cet ingredient car il est deja utilise dans une ou plusieurs recettes.');
+            header('Location: /admin/ingredients');
+            exit;
+        }
+
+        $this->db->query('DELETE FROM ingredients WHERE id = ?', [(int)$id]);
+        Flash::set('success', 'Ingredient supprime.');
+        header('Location: /admin/ingredients');
+        exit;
+    }
+
     public function recipes(): void
     {
         Auth::requireAdmin();

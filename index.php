@@ -53,6 +53,9 @@ $router->post('demande-devis/{id}/message', [QuoteRequestController::class, 'sto
 $router->get('admin', [AdminController::class, 'dashboard']);
 $router->get('admin/users', [AdminController::class, 'users']);
 $router->post('admin/users/{id}/update', [AdminController::class, 'updateUser']);
+$router->get('admin/ingredients', [AdminController::class, 'ingredients']);
+$router->post('admin/ingredients', [AdminController::class, 'storeIngredient']);
+$router->post('admin/ingredients/{id}/delete', [AdminController::class, 'deleteIngredient']);
 $router->get('admin/recipes', [AdminController::class, 'recipes']);
 $router->post('admin/recipes', [AdminController::class, 'storeRecipe']);
 $router->get('admin/formulas', [AdminController::class, 'formulas']);

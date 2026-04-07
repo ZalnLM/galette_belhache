@@ -313,6 +313,11 @@ td {
     margin: 0;
 }
 
+.text-muted {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
 .message-thread {
     display: grid;
     gap: 1rem;

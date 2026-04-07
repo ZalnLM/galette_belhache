@@ -16,6 +16,9 @@
                     <a href="/mes-demandes">Mes demandes</a>
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
                         <a href="/admin">Admin</a>
+                        <a href="/admin/ingredients">Ingredients</a>
+                        <a href="/admin/recipes">Recettes</a>
+                        <a href="/admin/formulas">Formules</a>
                     <?php endif; ?>
                     <a href="/logout">Deconnexion</a>
                 <?php else: ?>
