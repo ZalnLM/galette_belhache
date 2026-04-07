@@ -19,7 +19,7 @@
                     <dl class="meta-list">
                         <div>
                             <dt>Categorie</dt>
-                            <dd><?= htmlspecialchars($recipe['category'], ENT_QUOTES, 'UTF-8') ?></dd>
+                            <dd><?= $recipe['category'] === 'sale' ? 'Salé' : 'Sucré' ?></dd>
                         </div>
                         <div>
                             <dt>Prix de vente</dt>
