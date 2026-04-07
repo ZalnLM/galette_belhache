@@ -174,6 +174,7 @@ class QuoteRequestController
                 'SELECT * FROM quote_lines WHERE quote_id = ? ORDER BY id ASC',
                 [(int)$quote['id']]
             )->fetchAll();
+            unset($quote['internal_cost_total']);
         }
 
         View::render('quote_requests/show', [
@@ -249,6 +250,7 @@ class QuoteRequestController
             'SELECT * FROM quote_lines WHERE quote_id = ? ORDER BY id ASC',
             [(int)$id]
         )->fetchAll();
+        unset($quote['internal_cost_total']);
 
         View::render('quotes/document', [
             'pageTitle' => 'Devis final',
