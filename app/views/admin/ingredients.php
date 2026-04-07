@@ -4,9 +4,12 @@
             <h1>Ingredients</h1>
             <p>Chaque ingredient porte un prix d achat de reference, par exemple au kilo, au litre ou a l unite, afin de calculer le cout interne des recettes.</p>
         </div>
+        <div class="admin-inline-note">
+            Les ingredients a completer apparaissent en premier. Ils correspondent en general aux ingredients crees automatiquement depuis une recette.
+        </div>
         <div class="ingredients-admin-grid">
             <?php foreach ($ingredients as $ingredient): ?>
-                <article class="ingredient-admin-card">
+                <article class="ingredient-admin-card <?= (int)$ingredient['needs_completion'] === 1 ? 'ingredient-admin-card--warning' : '' ?>">
                     <form method="post" action="/admin/ingredients/<?= (int)$ingredient['id'] ?>/update" class="stack-lg">
                         <?= Csrf::input() ?>
                         <div class="ingredient-admin-card__head">
@@ -14,7 +17,12 @@
                                 <p class="eyebrow">Ingredient</p>
                                 <h2><?= htmlspecialchars($ingredient['name'], ENT_QUOTES, 'UTF-8') ?></h2>
                             </div>
-                            <span class="status-badge"><?= (int)$ingredient['recipe_usage_count'] ?> recette(s)</span>
+                            <div class="ingredient-admin-card__badges">
+                                <?php if ((int)$ingredient['needs_completion'] === 1): ?>
+                                    <span class="status-badge status-badge-warning">A completer</span>
+                                <?php endif; ?>
+                                <span class="status-badge"><?= (int)$ingredient['recipe_usage_count'] ?> recette(s)</span>
+                            </div>
                         </div>
 
                         <div class="grid-form two-cols">

@@ -84,10 +84,14 @@ class AdminController
                         SELECT COUNT(*)
                         FROM recipe_ingredients ri
                         WHERE ri.ingredient_id = i.id
-                    ) AS recipe_usage_count
+                    ) AS recipe_usage_count,
+                    CASE
+                        WHEN i.purchase_price <= 0 OR i.is_active = 0 THEN 1
+                        ELSE 0
+                    END AS needs_completion
              FROM ingredients i
              JOIN units u ON u.id = i.purchase_unit_id
-             ORDER BY i.name ASC'
+             ORDER BY needs_completion DESC, i.name ASC'
         )->fetchAll();
 
         $units = $this->db->query(
