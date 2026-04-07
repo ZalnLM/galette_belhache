@@ -64,6 +64,9 @@ $router->post('admin/recipes/{id}/update', [AdminController::class, 'updateRecip
 $router->post('admin/recipes/{id}/delete', [AdminController::class, 'deleteRecipe']);
 $router->get('admin/formulas', [AdminController::class, 'formulas']);
 $router->post('admin/formulas', [AdminController::class, 'storeFormula']);
+$router->get('admin/formulas/{id}/edit', [AdminController::class, 'editFormula']);
+$router->post('admin/formulas/{id}/update', [AdminController::class, 'updateFormula']);
+$router->post('admin/formulas/{id}/delete', [AdminController::class, 'deleteFormula']);
 $router->get('admin/quote-requests', [AdminController::class, 'quoteRequests']);
 $router->get('admin/quote-requests/{id}', [AdminController::class, 'showQuoteRequest']);
 $router->post('admin/quote-requests/{id}/status', [AdminController::class, 'updateQuoteRequestStatus']);

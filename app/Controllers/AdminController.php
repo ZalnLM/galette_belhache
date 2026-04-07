@@ -464,8 +464,101 @@ class AdminController
         );
 
         $formulaId = $this->db->lastInsertId();
-        $recipeIds = $_POST['recipe_id'] ?? [];
-        $quantities = $_POST['recipe_quantity'] ?? [];
+        $this->syncFormulaItems($formulaId, $_POST['recipe_id'] ?? [], $_POST['recipe_quantity'] ?? []);
+
+        Flash::set('success', 'Formule ajoutee.');
+        header('Location: /admin/formulas');
+        exit;
+    }
+
+    public function editFormula(string $id): void
+    {
+        Auth::requireAdmin();
+
+        $formula = $this->db->query('SELECT * FROM formulas WHERE id = ?', [(int)$id])->fetch();
+        if (!$formula) {
+            http_response_code(404);
+            exit('Formule introuvable.');
+        }
+
+        $formulaItems = $this->db->query(
+            'SELECT fi.*, r.name AS recipe_name
+             FROM formula_items fi
+             JOIN recipes r ON r.id = fi.recipe_id
+             WHERE fi.formula_id = ?
+             ORDER BY fi.id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        $recipes = $this->db->query('SELECT id, name, category, selling_price FROM recipes WHERE is_active = 1 ORDER BY display_order ASC, name ASC')->fetchAll();
+        $quoteUsageCount = (int)$this->db->query('SELECT COUNT(*) FROM quote_request_formulas WHERE formula_id = ?', [(int)$id])->fetchColumn();
+
+        View::render('admin/formula_edit', [
+            'pageTitle' => 'Modifier formule',
+            'formula' => $formula,
+            'formulaItems' => $formulaItems,
+            'recipes' => $recipes,
+            'quoteUsageCount' => $quoteUsageCount,
+        ]);
+    }
+
+    public function updateFormula(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $description = trim((string)($_POST['description'] ?? ''));
+        $pricePerPerson = (float)($_POST['price_per_person'] ?? 0);
+        $minimumGuests = (int)($_POST['minimum_guests'] ?? 1);
+        $displayOrder = (int)($_POST['display_order'] ?? 0);
+        $isPriceVisible = isset($_POST['is_price_visible']) ? 1 : 0;
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom de la formule est obligatoire.');
+            header('Location: /admin/formulas/' . (int)$id . '/edit');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE formulas
+             SET name = ?, description = ?, price_per_person = ?, minimum_guests = ?, is_price_visible = ?, display_order = ?, is_active = ?
+             WHERE id = ?',
+            [$name, $description, $pricePerPerson, $minimumGuests, $isPriceVisible, $displayOrder, $isActive, (int)$id]
+        );
+
+        $this->syncFormulaItems((int)$id, $_POST['recipe_id'] ?? [], $_POST['recipe_quantity'] ?? []);
+
+        Flash::set('success', 'Formule mise a jour.');
+        header('Location: /admin/formulas');
+        exit;
+    }
+
+    public function deleteFormula(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $quoteUsageCount = (int)$this->db->query('SELECT COUNT(*) FROM quote_request_formulas WHERE formula_id = ?', [(int)$id])->fetchColumn();
+        if ($quoteUsageCount > 0) {
+            Flash::set('danger', 'Impossible de supprimer cette formule car elle est deja utilisee dans une ou plusieurs demandes de devis.');
+            header('Location: /admin/formulas/' . (int)$id . '/edit');
+            exit;
+        }
+
+        $this->db->query('DELETE FROM formula_items WHERE formula_id = ?', [(int)$id]);
+        $this->db->query('DELETE FROM formulas WHERE id = ?', [(int)$id]);
+
+        Flash::set('success', 'Formule supprimee.');
+        header('Location: /admin/formulas');
+        exit;
+    }
+
+    private function syncFormulaItems(int $formulaId, array $recipeIds, array $quantities): void
+    {
+        $this->db->query('DELETE FROM formula_items WHERE formula_id = ?', [$formulaId]);
+
         foreach ($recipeIds as $index => $recipeId) {
             $recipeId = (int)$recipeId;
             $quantity = (int)($quantities[$index] ?? 0);
@@ -476,10 +569,6 @@ class AdminController
                 );
             }
         }
-
-        Flash::set('success', 'Formule ajoutee.');
-        header('Location: /admin/formulas');
-        exit;
     }
 
     public function quoteRequests(): void

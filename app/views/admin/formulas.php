@@ -5,29 +5,42 @@
             <p>Le prix par personne est saisi par l admin et peut etre affiche ou masque sur le catalogue utilisateur.</p>
         </div>
 
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Minimum</th>
-                        <th>Prix / pers.</th>
-                        <th>Prix visible</th>
-                        <th>Composition</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($formulas as $formula): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($formula['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= (int)$formula['minimum_guests'] ?></td>
-                            <td><?= number_format((float)$formula['price_per_person'], 2, ',', ' ') ?> EUR</td>
-                            <td><?= (int)$formula['is_price_visible'] === 1 ? 'Oui' : 'Non' ?></td>
-                            <td><?= htmlspecialchars((string)$formula['recipe_summary'], ENT_QUOTES, 'UTF-8') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="recipes-admin-grid">
+            <?php foreach ($formulas as $formula): ?>
+                <article class="recipe-admin-card">
+                    <div class="recipe-admin-card__head">
+                        <div>
+                            <p class="eyebrow">Formule</p>
+                            <h2><?= htmlspecialchars($formula['name'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        </div>
+                        <span class="status-badge"><?= (int)$formula['is_active'] === 1 ? 'Active' : 'Inactive' ?></span>
+                    </div>
+
+                    <dl class="meta-list">
+                        <div>
+                            <dt>Minimum</dt>
+                            <dd><?= (int)$formula['minimum_guests'] ?> pers.</dd>
+                        </div>
+                        <div>
+                            <dt>Prix / pers.</dt>
+                            <dd><?= number_format((float)$formula['price_per_person'], 2, ',', ' ') ?> EUR</dd>
+                        </div>
+                        <div>
+                            <dt>Prix visible</dt>
+                            <dd><?= (int)$formula['is_price_visible'] === 1 ? 'Oui' : 'Non' ?></dd>
+                        </div>
+                        <div>
+                            <dt>Composition</dt>
+                            <dd><?= htmlspecialchars((string)($formula['recipe_summary'] ?: 'Aucune composition pour le moment.'), ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                    </dl>
+
+                    <div class="recipe-admin-card__footer">
+                        <p class="text-muted"><?= htmlspecialchars((string)($formula['description'] ?: 'Aucune description pour le moment.'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <a class="btn btn-light" href="/admin/formulas/<?= (int)$formula['id'] ?>/edit">Modifier</a>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
     </section>
 
