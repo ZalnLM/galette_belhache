@@ -66,17 +66,27 @@ button {
     display: flex;
     flex-wrap: wrap;
     gap: 0.8rem;
+    align-items: center;
 }
 
-.topnav a {
+.topnav a,
+.topnav-button {
     padding: 0.7rem 0.95rem;
     border-radius: 999px;
     color: var(--muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
 }
 
-.topnav a:hover {
+.topnav a:hover,
+.topnav-button:hover {
     background: var(--panel-soft);
     color: var(--text);
+}
+
+.logout-form {
+    margin: 0;
 }
 
 .page-wrap {
@@ -361,6 +371,11 @@ td {
     font-weight: 700;
 }
 
+.status-badge-muted {
+    background: rgba(109, 98, 87, 0.12);
+    color: var(--muted);
+}
+
 .stat-card {
     padding: 1.4rem;
     display: grid;
@@ -481,6 +496,40 @@ td {
     gap: 1rem;
 }
 
+.admin-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.admin-summary-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background: linear-gradient(180deg, #fffdfa 0%, #f8f3eb 100%);
+    display: grid;
+    gap: 1rem;
+}
+
+.admin-summary-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+}
+
+.admin-summary-card__head h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.check-panel {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+}
+
 .recipe-admin-card {
     border: 1px solid var(--line);
     border-radius: 16px;
@@ -517,6 +566,39 @@ td {
 
 .stack-xl {
     gap: 2rem;
+}
+
+@media (max-width: 720px) {
+    .page-wrap {
+        padding: 1rem;
+    }
+
+    .topbar {
+        padding: 1rem;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .section-head,
+    .admin-summary-card__head,
+    .recipe-admin-card__head,
+    .ingredient-admin-card__head,
+    .formula-card__top,
+    .message-meta {
+        flex-direction: column;
+    }
+
+    .actions-inline {
+        justify-content: stretch;
+    }
+
+    .actions-inline .btn {
+        width: 100%;
+    }
+
+    .ingredient-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 900px) {

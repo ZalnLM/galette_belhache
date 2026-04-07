@@ -80,6 +80,12 @@ class AdminController
             exit;
         }
 
+        if (mb_strlen($password) < 10) {
+            Flash::set('danger', 'Le mot de passe doit contenir au moins 10 caracteres.');
+            header('Location: /admin/users');
+            exit;
+        }
+
         $existing = $this->db->query('SELECT id FROM users WHERE email = ? LIMIT 1', [$email])->fetch();
         if ($existing) {
             Flash::set('danger', 'Un utilisateur existe deja avec cet email.');

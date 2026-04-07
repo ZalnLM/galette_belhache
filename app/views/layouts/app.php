@@ -16,11 +16,16 @@
                     <a href="/mes-demandes">Mes demandes</a>
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
                         <a href="/admin">Admin</a>
+                        <a href="/admin/users">Utilisateurs</a>
+                        <a href="/admin/quote-requests">Demandes</a>
                         <a href="/admin/ingredients">Ingredients</a>
                         <a href="/admin/recipes">Recettes</a>
                         <a href="/admin/formulas">Formules</a>
                     <?php endif; ?>
-                    <a href="/logout">Deconnexion</a>
+                    <form method="post" action="/logout" class="logout-form">
+                        <?= Csrf::input() ?>
+                        <button type="submit" class="topnav-button">Deconnexion</button>
+                    </form>
                 <?php else: ?>
                     <a href="/login">Connexion</a>
                     <a href="/register">Inscription</a>

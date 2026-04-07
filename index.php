@@ -21,12 +21,19 @@ session_set_cookie_params([
 
 session_start();
 
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), camera=(), microphone=()');
+header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'");
+
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/app/Core/Database.php';
 require_once __DIR__ . '/app/Core/Flash.php';
 require_once __DIR__ . '/app/Core/Csrf.php';
 require_once __DIR__ . '/app/Core/Auth.php';
+require_once __DIR__ . '/app/Core/LoginThrottle.php';
 require_once __DIR__ . '/app/Core/View.php';
 require_once __DIR__ . '/app/Core/Router.php';
 require_once __DIR__ . '/app/Controllers/AuthController.php';
@@ -43,7 +50,7 @@ $router->get('login', [AuthController::class, 'login']);
 $router->post('login', [AuthController::class, 'storeLogin']);
 $router->get('register', [AuthController::class, 'register']);
 $router->post('register', [AuthController::class, 'storeRegister']);
-$router->get('logout', [AuthController::class, 'logout']);
+$router->post('logout', [AuthController::class, 'logout']);
 
 $router->get('mes-demandes', [QuoteRequestController::class, 'index']);
 $router->post('demande-devis', [QuoteRequestController::class, 'store']);
