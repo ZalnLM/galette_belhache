@@ -98,12 +98,19 @@ Le script [deploy_dev.sh](/home/adrien/dev/galettes-privees/scripts/deploy_dev.s
 - synchroniser les fichiers vers `dev.galette.belhache.net`
 - ecrire `config/secrets.local.php` sur le serveur
 - importer le schema si la base est vide
-- charger les donnees de demonstration
+- ne pas toucher aux donnees existantes par defaut
+- charger les donnees de demonstration seulement sur demande
 
 Commande type :
 
 ```bash
 DB_PASSWORD='mot_de_passe_sql' bash /home/adrien/dev/galettes-privees/scripts/deploy_dev.sh
+```
+
+Pour rejouer volontairement les donnees de demonstration :
+
+```bash
+RUN_SEED=1 DB_PASSWORD='mot_de_passe_sql' bash /home/adrien/dev/galettes-privees/scripts/deploy_dev.sh
 ```
 
 ## Suite prevue

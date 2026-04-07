@@ -15,6 +15,7 @@ DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-sc1mcxk1700_galette_dev}"
 DB_USER="${DB_USER:-sc1mcxk1700_galette_dev_user}"
 DB_PASSWORD="${DB_PASSWORD:-}"
+RUN_SEED="${RUN_SEED:-0}"
 
 [ -n "$DB_PASSWORD" ] || { echo "DB_PASSWORD is required"; exit 1; }
 
@@ -40,12 +41,20 @@ return [
 PHP
 "
 
-echo "Ensuring schema and demo data on remote database"
+echo "Ensuring schema on remote database"
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "
   if ! mysql -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p'$DB_PASSWORD' '$DB_NAME' -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1; then
     mysql -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p'$DB_PASSWORD' '$DB_NAME' < '$REMOTE_DIR/db/schema.sql'
-  fi &&
-  APP_ENV='$REMOTE_APP_ENV' php '$REMOTE_DIR/scripts/seed_demo.php'
+  fi
 "
+
+if [ "$RUN_SEED" = "1" ]; then
+  echo "Running demo seed on remote database"
+  ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$SSH_USER@$SSH_HOST" "
+    APP_ENV='$REMOTE_APP_ENV' php '$REMOTE_DIR/scripts/seed_demo.php'
+  "
+else
+  echo "Skipping demo seed (set RUN_SEED=1 to execute it manually during deployment)"
+fi
 
 echo "Deployment to dev completed."
