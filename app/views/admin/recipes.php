@@ -5,31 +5,42 @@
             <p>Chaque recette correspond a 1 galette. Le cout interne est derive des ingredients, tandis que le prix de vente reste fixe par l admin.</p>
         </div>
 
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Categorie</th>
-                        <th>Prix vente</th>
-                        <th>Cout interne</th>
-                        <th>Actif</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($recipes as $recipe): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($recipe['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars($recipe['category'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= number_format((float)$recipe['selling_price'], 2, ',', ' ') ?> EUR</td>
-                            <td><?= number_format((float)$recipe['internal_cost'], 2, ',', ' ') ?> EUR</td>
-                            <td><?= (int)$recipe['is_active'] === 1 ? 'Oui' : 'Non' ?></td>
-                            <td><a class="btn btn-light" href="/admin/recipes/<?= (int)$recipe['id'] ?>/edit">Modifier</a></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="recipes-admin-grid">
+            <?php foreach ($recipes as $recipe): ?>
+                <article class="recipe-admin-card">
+                    <div class="recipe-admin-card__head">
+                        <div>
+                            <p class="eyebrow">Recette</p>
+                            <h2><?= htmlspecialchars($recipe['name'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        </div>
+                        <span class="status-badge"><?= (int)$recipe['is_active'] === 1 ? 'Active' : 'Inactive' ?></span>
+                    </div>
+
+                    <dl class="meta-list">
+                        <div>
+                            <dt>Categorie</dt>
+                            <dd><?= htmlspecialchars($recipe['category'], ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                        <div>
+                            <dt>Prix de vente</dt>
+                            <dd><?= number_format((float)$recipe['selling_price'], 2, ',', ' ') ?> EUR</dd>
+                        </div>
+                        <div>
+                            <dt>Cout interne</dt>
+                            <dd><?= number_format((float)$recipe['internal_cost'], 2, ',', ' ') ?> EUR</dd>
+                        </div>
+                        <div>
+                            <dt>Marge brute</dt>
+                            <dd><?= number_format((float)$recipe['selling_price'] - (float)$recipe['internal_cost'], 2, ',', ' ') ?> EUR</dd>
+                        </div>
+                    </dl>
+
+                    <div class="recipe-admin-card__footer">
+                        <p class="text-muted"><?= htmlspecialchars((string)($recipe['description'] ?: 'Aucune description pour le moment.'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <a class="btn btn-light" href="/admin/recipes/<?= (int)$recipe['id'] ?>/edit">Modifier</a>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
     </section>
 

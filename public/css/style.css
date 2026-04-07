@@ -449,6 +449,38 @@ td {
     flex-wrap: wrap;
 }
 
+.recipes-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.recipe-admin-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background: linear-gradient(180deg, #fffdfa 0%, #f8f3eb 100%);
+    display: grid;
+    gap: 1rem;
+}
+
+.recipe-admin-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+}
+
+.recipe-admin-card__head h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.recipe-admin-card__footer {
+    display: grid;
+    gap: 1rem;
+}
+
 .stack-md {
     gap: 0.9rem;
 }
