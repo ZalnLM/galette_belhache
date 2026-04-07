@@ -152,6 +152,116 @@ class AdminController
         ]);
     }
 
+    public function fixedFees(): void
+    {
+        Auth::requireAdmin();
+
+        $fixedFees = $this->db->query(
+            'SELECT ff.*,
+                    (
+                        SELECT COUNT(*)
+                        FROM quote_lines ql
+                        WHERE ql.fixed_fee_id = ff.id
+                    ) AS usage_count
+             FROM fixed_fees ff
+             ORDER BY ff.name ASC'
+        )->fetchAll();
+
+        View::render('admin/fixed_fees', [
+            'pageTitle' => 'Frais permanents',
+            'fixedFees' => $fixedFees,
+        ]);
+    }
+
+    public function storeFixedFee(): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $defaultAmount = (float)($_POST['default_amount'] ?? 0);
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom du frais permanent est obligatoire.');
+            header('Location: /admin/fixed-fees');
+            exit;
+        }
+
+        $exists = $this->db->query('SELECT id FROM fixed_fees WHERE name = ? LIMIT 1', [$name])->fetch();
+        if ($exists) {
+            Flash::set('danger', 'Un frais permanent porte deja ce nom.');
+            header('Location: /admin/fixed-fees');
+            exit;
+        }
+
+        $this->db->query(
+            'INSERT INTO fixed_fees (name, default_amount, is_active) VALUES (?, ?, ?)',
+            [$name, $defaultAmount, $isActive]
+        );
+
+        Flash::set('success', 'Frais permanent ajoute.');
+        header('Location: /admin/fixed-fees');
+        exit;
+    }
+
+    public function updateFixedFee(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $name = trim((string)($_POST['name'] ?? ''));
+        $defaultAmount = (float)($_POST['default_amount'] ?? 0);
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($name === '') {
+            Flash::set('danger', 'Le nom du frais permanent est obligatoire.');
+            header('Location: /admin/fixed-fees');
+            exit;
+        }
+
+        $exists = $this->db->query(
+            'SELECT id FROM fixed_fees WHERE name = ? AND id <> ? LIMIT 1',
+            [$name, (int)$id]
+        )->fetch();
+        if ($exists) {
+            Flash::set('danger', 'Un autre frais permanent porte deja ce nom.');
+            header('Location: /admin/fixed-fees');
+            exit;
+        }
+
+        $this->db->query(
+            'UPDATE fixed_fees SET name = ?, default_amount = ?, is_active = ? WHERE id = ?',
+            [$name, $defaultAmount, $isActive, (int)$id]
+        );
+
+        Flash::set('success', 'Frais permanent mis a jour.');
+        header('Location: /admin/fixed-fees');
+        exit;
+    }
+
+    public function deleteFixedFee(string $id): void
+    {
+        Auth::requireAdmin();
+        Csrf::verify();
+
+        $usageCount = (int)$this->db->query(
+            'SELECT COUNT(*) FROM quote_lines WHERE fixed_fee_id = ?',
+            [(int)$id]
+        )->fetchColumn();
+
+        if ($usageCount > 0) {
+            Flash::set('danger', 'Impossible de supprimer ce frais permanent car il est deja utilise dans un ou plusieurs devis.');
+            header('Location: /admin/fixed-fees');
+            exit;
+        }
+
+        $this->db->query('DELETE FROM fixed_fees WHERE id = ?', [(int)$id]);
+        Flash::set('success', 'Frais permanent supprime.');
+        header('Location: /admin/fixed-fees');
+        exit;
+    }
+
     public function storeIngredient(): void
     {
         Auth::requireAdmin();
@@ -970,9 +1080,16 @@ class AdminController
                 continue;
             }
 
-            $label = (string)$this->db->query('SELECT name FROM fixed_fees WHERE id = ? LIMIT 1', [$fixedFeeId])->fetchColumn();
+            $fixedFee = $this->db->query(
+                'SELECT name, default_amount FROM fixed_fees WHERE id = ? LIMIT 1',
+                [$fixedFeeId]
+            )->fetch();
+            $label = (string)($fixedFee['name'] ?? '');
             if ($label === '') {
                 continue;
+            }
+            if ($unitPrice <= 0) {
+                $unitPrice = (float)($fixedFee['default_amount'] ?? 0);
             }
 
             $this->db->query(

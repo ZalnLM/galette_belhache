@@ -97,6 +97,7 @@ while (count($freeFeeRows) < 3) {
 
             <div class="stack-md">
                 <h2>Frais predefinis</h2>
+                <p class="text-muted">Ces frais permanents sont geres dans l admin frais. Si tu laisses le montant a 0, le montant par defaut sera repris automatiquement.</p>
                 <?php foreach ($fixedFeeRows as $row): ?>
                     <div class="quote-line-row">
                         <select name="fixed_fee_id[]">
