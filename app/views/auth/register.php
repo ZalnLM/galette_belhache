@@ -31,4 +31,8 @@
             <button type="submit" class="btn btn-primary">Creer mon compte</button>
         </div>
     </form>
+
+    <p class="auth-helper">
+        <a href="/login">J ai deja un compte</a>
+    </p>
 </section>

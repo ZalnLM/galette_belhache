@@ -17,4 +17,8 @@
         </label>
         <button type="submit" class="btn btn-primary">Se connecter</button>
     </form>
+
+    <p class="auth-helper">
+        <a href="/forgot-password">Mot de passe oublie ?</a>
+    </p>
 </section>
