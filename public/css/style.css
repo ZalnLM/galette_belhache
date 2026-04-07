@@ -410,6 +410,21 @@ td {
     gap: 1rem;
 }
 
+.quote-document {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.quote-totals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.quote-total-line {
+    font-size: 1.1rem;
+}
+
 .table-form {
     display: contents;
 }
@@ -618,6 +633,31 @@ td {
 
     .quote-line-row {
         grid-template-columns: 1fr;
+    }
+}
+
+@media print {
+    .topbar,
+    .flash,
+    .actions-inline,
+    .topnav,
+    .logout-form {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .page-wrap {
+        max-width: none;
+        padding: 0;
+    }
+
+    .panel,
+    .subpanel {
+        box-shadow: none;
+        border-color: #ddd;
     }
 }
 

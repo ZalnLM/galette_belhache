@@ -219,4 +219,44 @@ class QuoteRequestController
         header('Location: /demande-devis/' . (int)$id);
         exit;
     }
+
+    public function showQuote(string $id): void
+    {
+        Auth::requireLogin();
+        $user = Auth::user();
+
+        $quote = $this->db->query(
+            'SELECT q.*, qr.event_name, qr.event_type, qr.event_date AS request_event_date, qr.total_guests, qr.address, qr.phone,
+                    qr.status AS request_status, qr.id AS request_id, qr.user_id, u.first_name, u.last_name, u.email
+             FROM quotes q
+             JOIN quote_requests qr ON qr.id = q.quote_request_id
+             JOIN users u ON u.id = qr.user_id
+             WHERE q.id = ?',
+            [(int)$id]
+        )->fetch();
+
+        if (!$quote) {
+            http_response_code(404);
+            exit('Devis introuvable.');
+        }
+
+        if (!Auth::isAdmin() && (int)$quote['user_id'] !== (int)$user['id']) {
+            http_response_code(403);
+            exit('Acces refuse.');
+        }
+
+        $quoteLines = $this->db->query(
+            'SELECT * FROM quote_lines WHERE quote_id = ? ORDER BY id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        View::render('quotes/document', [
+            'pageTitle' => 'Devis final',
+            'quote' => $quote,
+            'quoteLines' => $quoteLines,
+            'showInternalCost' => false,
+            'backLink' => '/demande-devis/' . (int)$quote['request_id'],
+            'backLabel' => 'Retour au dossier',
+        ]);
+    }
 }

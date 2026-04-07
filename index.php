@@ -60,6 +60,7 @@ $router->get('mes-demandes', [QuoteRequestController::class, 'index']);
 $router->post('demande-devis', [QuoteRequestController::class, 'store']);
 $router->get('demande-devis/{id}', [QuoteRequestController::class, 'show']);
 $router->post('demande-devis/{id}/message', [QuoteRequestController::class, 'storeMessage']);
+$router->get('devis/{id}', [QuoteRequestController::class, 'showQuote']);
 
 $router->get('admin', [AdminController::class, 'dashboard']);
 $router->get('admin/users', [AdminController::class, 'users']);
@@ -85,6 +86,7 @@ $router->post('admin/formulas/{id}/update', [AdminController::class, 'updateForm
 $router->post('admin/formulas/{id}/delete', [AdminController::class, 'deleteFormula']);
 $router->get('admin/quotes', [AdminController::class, 'quotes']);
 $router->get('admin/quotes/{id}', [AdminController::class, 'editQuote']);
+$router->get('admin/quotes/{id}/document', [AdminController::class, 'showQuoteDocument']);
 $router->post('admin/quotes/{id}/update', [AdminController::class, 'updateQuote']);
 $router->get('admin/quote-requests', [AdminController::class, 'quoteRequests']);
 $router->get('admin/quote-requests/{id}', [AdminController::class, 'showQuoteRequest']);

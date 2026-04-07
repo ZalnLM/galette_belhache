@@ -42,6 +42,9 @@
                     <li><?= htmlspecialchars($line['label'], ENT_QUOTES, 'UTF-8') ?> - <?= number_format((float)$line['quantity'], 2, ',', ' ') ?> x <?= number_format((float)$line['unit_price'], 2, ',', ' ') ?> EUR = <?= number_format((float)$line['total_price'], 2, ',', ' ') ?> EUR</li>
                 <?php endforeach; ?>
             </ul>
+            <div class="actions-inline">
+                <a class="btn btn-light" href="/devis/<?= (int)$quote['id'] ?>">Voir le devis final</a>
+            </div>
         <?php else: ?>
             <p class="text-muted">Aucun devis n a encore ete prepare pour ce dossier.</p>
         <?php endif; ?>

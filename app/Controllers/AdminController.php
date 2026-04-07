@@ -889,15 +889,7 @@ class AdminController
     {
         Auth::requireAdmin();
 
-        $quote = $this->db->query(
-            'SELECT q.*, qr.event_name, qr.event_type, qr.event_date AS request_event_date, qr.total_guests, qr.address, qr.phone,
-                    qr.status AS request_status, qr.id AS request_id, u.first_name, u.last_name, u.email
-             FROM quotes q
-             JOIN quote_requests qr ON qr.id = q.quote_request_id
-             JOIN users u ON u.id = qr.user_id
-             WHERE q.id = ?',
-            [(int)$id]
-        )->fetch();
+        $quote = $this->loadQuoteDocumentData((int)$id);
 
         if (!$quote) {
             http_response_code(404);
@@ -924,6 +916,31 @@ class AdminController
             'fixedFeeLines' => array_values(array_filter($lines, static fn (array $line): bool => $line['line_type'] === 'fixed_fee')),
             'freeFeeLines' => array_values(array_filter($lines, static fn (array $line): bool => $line['line_type'] === 'free_fee')),
             'fixedFees' => $fixedFees,
+        ]);
+    }
+
+    public function showQuoteDocument(string $id): void
+    {
+        Auth::requireAdmin();
+
+        $quote = $this->loadQuoteDocumentData((int)$id);
+        if (!$quote) {
+            http_response_code(404);
+            exit('Devis introuvable.');
+        }
+
+        $lines = $this->db->query(
+            'SELECT * FROM quote_lines WHERE quote_id = ? ORDER BY id ASC',
+            [(int)$id]
+        )->fetchAll();
+
+        View::render('quotes/document', [
+            'pageTitle' => 'Devis final',
+            'quote' => $quote,
+            'quoteLines' => $lines,
+            'showInternalCost' => true,
+            'backLink' => '/admin/quotes/' . (int)$id,
+            'backLabel' => 'Retour au devis',
         ]);
     }
 
@@ -1039,6 +1056,21 @@ class AdminController
         )->fetchColumn();
 
         return sprintf('LG-%s-%04d', $year, $count + 1);
+    }
+
+    private function loadQuoteDocumentData(int $quoteId): ?array
+    {
+        $quote = $this->db->query(
+            'SELECT q.*, qr.event_name, qr.event_type, qr.event_date AS request_event_date, qr.total_guests, qr.address, qr.phone,
+                    qr.status AS request_status, qr.id AS request_id, u.first_name, u.last_name, u.email
+             FROM quotes q
+             JOIN quote_requests qr ON qr.id = q.quote_request_id
+             JOIN users u ON u.id = qr.user_id
+             WHERE q.id = ?',
+            [$quoteId]
+        )->fetch();
+
+        return $quote ?: null;
     }
 
     private function syncQuoteLines(

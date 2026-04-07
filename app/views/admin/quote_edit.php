@@ -25,7 +25,10 @@ while (count($freeFeeRows) < 3) {
                 <p class="eyebrow"><?= htmlspecialchars($quote['quote_number'], ENT_QUOTES, 'UTF-8') ?></p>
                 <h1>Devis pour <?= htmlspecialchars($quote['event_name'], ENT_QUOTES, 'UTF-8') ?></h1>
             </div>
-            <a class="btn btn-light" href="/admin/quote-requests/<?= (int)$quote['request_id'] ?>">Retour a la demande</a>
+            <div class="actions-inline">
+                <a class="btn btn-light" href="/admin/quotes/<?= (int)$quote['id'] ?>/document">Voir le devis final</a>
+                <a class="btn btn-light" href="/admin/quote-requests/<?= (int)$quote['request_id'] ?>">Retour a la demande</a>
+            </div>
         </div>
 
         <div class="details-grid">
@@ -39,10 +42,11 @@ while (count($freeFeeRows) < 3) {
 
             <article class="subpanel">
                 <h2>Totaux</h2>
-                <p><strong>Vente :</strong> <?= number_format((float)$quote['sale_total'], 2, ',', ' ') ?> EUR</p>
-                <p><strong>Frais :</strong> <?= number_format((float)$quote['fixed_fees_total'], 2, ',', ' ') ?> EUR</p>
+                <p><strong>Total devis :</strong> <?= number_format((float)$quote['sale_total'], 2, ',', ' ') ?> EUR</p>
+                <p><strong>Total frais :</strong> <?= number_format((float)$quote['fixed_fees_total'], 2, ',', ' ') ?> EUR</p>
                 <p><strong>Cout interne :</strong> <?= number_format((float)$quote['internal_cost_total'], 2, ',', ' ') ?> EUR</p>
                 <p><strong>Acompte :</strong> <?= number_format((float)$quote['deposit_amount'], 2, ',', ' ') ?> EUR</p>
+                <p><strong>Solde restant :</strong> <?= number_format(max(0, (float)$quote['sale_total'] - (float)$quote['deposit_amount']), 2, ',', ' ') ?> EUR</p>
             </article>
         </div>
     </section>
